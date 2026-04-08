@@ -65,6 +65,12 @@ const AnnotationWorkbench: React.FC = () => {
         const latestAnnotation = result.items[result.items.length - 1];
         const content = latestAnnotation.content;
 
+        // 跳过包含错误的标注
+        if (content && content.error) {
+          setCurrentAnnotation(null);
+          return;
+        }
+
         if (project?.annotation_type === 'text_classification') {
           if (content.labels) {
             setCurrentAnnotation(content.labels.length === 1 ? content.labels[0] : content.labels);
@@ -84,26 +90,26 @@ const AnnotationWorkbench: React.FC = () => {
     }
   };
 
+  const [error, setError] = useState<string | null>(null);
+
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       if (!datasetId) {
-        message.error('数据集 ID 无效');
-        navigate(-1);
+        setError('数据集 ID 无效');
         return;
       }
 
       const dsId = Number(datasetId);
       if (isNaN(dsId) || dsId <= 0) {
-        message.error('数据集 ID 格式错误');
-        navigate(-1);
+        setError('数据集 ID 格式错误');
         return;
       }
 
       const currentDataset = await datasetApi.getDataset(dsId);
       if (!currentDataset) {
-        message.error('数据集不存在');
-        navigate(-1);
+        setError('数据集不存在');
         return;
       }
 
@@ -112,8 +118,7 @@ const AnnotationWorkbench: React.FC = () => {
       setAnnotatedCount(currentDataset.annotated_items || 0);
 
       if (!currentDataset.project_id) {
-        message.error('数据集未关联项目');
-        navigate(-1);
+        setError('数据集未关联项目');
         return;
       }
 
@@ -146,8 +151,7 @@ const AnnotationWorkbench: React.FC = () => {
       }
     } catch (error: any) {
       const errorMsg = error?.response?.data?.detail || error.message || '请检查网络连接或刷新页面重试';
-      message.error(`获取数据失败: ${errorMsg}`);
-      setTimeout(() => navigate(-1), 2000);
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -233,6 +237,13 @@ const AnnotationWorkbench: React.FC = () => {
       });
 
       const content = result.annotation.content;
+      
+      // 检查 AI 返回是否包含错误
+      if (content && content.error) {
+        message.error(`AI 标注失败: ${content.error}`);
+        return;
+      }
+
       let convertedContent: any;
 
       if (project.annotation_type === 'text_classification' && content.labels) {
@@ -519,6 +530,26 @@ const AnnotationWorkbench: React.FC = () => {
             请稍候
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 0' }}>
+        <Empty
+          description={
+            <div>
+              <p style={{ color: '#ff4d4f', fontSize: 15, fontWeight: 500, marginBottom: 8 }}>加载失败</p>
+              <p style={{ color: '#999', fontSize: 13 }}>{error}</p>
+            </div>
+          }
+        >
+          <Space>
+            <Button onClick={() => navigate('/projects')}>返回项目列表</Button>
+            <Button type="primary" onClick={() => fetchData()}>重新加载</Button>
+          </Space>
+        </Empty>
       </div>
     );
   }

@@ -117,7 +117,7 @@ const TextClassifier: React.FC<TextClassifierProps> = ({
       </div>
 
       {/* 已选标签展示 */}
-      {value && (
+      {value && typeof value !== 'object' && (
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
           <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
             已选标签：
@@ -137,7 +137,7 @@ const TextClassifier: React.FC<TextClassifierProps> = ({
                 const label = labels.find((l) => l.name === value);
                 return (
                   <Tag color={label?.color || 'default'}>
-                    {value}
+                    {String(value)}
                   </Tag>
                 );
               })()

@@ -28,7 +28,9 @@ const App: React.FC = () => {
             <Route path="projects" element={<ProjectList />} />
             <Route path="projects/create" element={<ProjectCreate />} />
             <Route path="projects/:id" element={<ProjectDetail />} />
+            <Route path="annotation" element={<Navigate to="/projects" replace />} />
             <Route path="annotation/:datasetId" element={<AnnotationWorkbench />} />
+            <Route path="review" element={<Navigate to="/projects" replace />} />
             <Route path="review/:datasetId" element={<AnnotationReview />} />
             <Route path="ai-config" element={<AIConfig />} />
           </Route>

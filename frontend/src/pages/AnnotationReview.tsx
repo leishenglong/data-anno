@@ -22,6 +22,7 @@ const AnnotationReview: React.FC = () => {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -38,6 +39,7 @@ const AnnotationReview: React.FC = () => {
     if (!datasetId) return;
     try {
       setLoading(true);
+      setError(null);
       const dsId = Number(datasetId);
       const ds = await datasetApi.getDataset(dsId);
       setDataset(ds);
@@ -55,8 +57,9 @@ const AnnotationReview: React.FC = () => {
       });
       setAnnotations(result.items || []);
       setTotal(result.total);
-    } catch {
-      message.error('获取数据失败');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.detail || err.message || '获取数据失败';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -285,71 +288,93 @@ const AnnotationReview: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 筛选栏 */}
-      <Card size="small" style={{ marginBottom: 16, borderRadius: 12 }} bodyStyle={{ padding: '12px 16px' }}>
-        <Space wrap>
-          <FilterOutlined style={{ color: '#999' }} />
-          <span style={{ color: '#666', fontSize: 13 }}>筛选：</span>
-          <Select
-            placeholder="审核状态"
-            allowClear
-            style={{ width: 120 }}
-            value={filterStatus}
-            onChange={setFilterStatus}
-            size="small"
-            options={[
-              { value: 'pending', label: '待审核' },
-              { value: 'approved', label: '已通过' },
-              { value: 'rejected', label: '已拒绝' },
-            ]}
-          />
-          <Select
-            placeholder="标注来源"
-            allowClear
-            style={{ width: 120 }}
-            value={filterAi === undefined ? undefined : filterAi ? 'ai' : 'human'}
-            onChange={(v) => setFilterAi(v === 'ai' ? true : v === 'human' ? false : undefined)}
-            size="small"
-            options={[
-              { value: 'ai', label: 'AI 生成' },
-              { value: 'human', label: '人工标注' },
-            ]}
-          />
-        </Space>
-      </Card>
+      {error && (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <Empty
+            description={
+              <div>
+                <p style={{ color: '#ff4d4f', fontWeight: 500 }}>加载失败</p>
+                <p style={{ color: '#999', fontSize: 13 }}>{error}</p>
+              </div>
+            }
+          >
+            <Space>
+              <Button onClick={() => navigate('/projects')}>返回项目列表</Button>
+              <Button type="primary" onClick={() => fetchData()}>重新加载</Button>
+            </Space>
+          </Empty>
+        </div>
+      )}
 
-      {/* 标注列表 */}
-      <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
-        {loading ? (
-          <div style={{ padding: 40, textAlign: 'center' }}><Spin /></div>
-        ) : annotations.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center' }}>
-            <Empty description="暂无标注记录" />
-          </div>
-        ) : (
-          <Table
-            rowSelection={{
-              selectedRowKeys,
-              onChange: setSelectedRowKeys,
-              getCheckboxProps: (record: Annotation) => ({
-                disabled: record.review_status !== 'pending',
-              }),
-            }}
-            columns={columns}
-            dataSource={annotations}
-            rowKey="id"
-            pagination={{
-              current: page,
-              pageSize,
-              total,
-              showSizeChanger: false,
-              showTotal: (t) => `共 ${t} 条`,
-              onChange: (p) => setPage(p),
-            }}
-            size="small"
-          />
-        )}
-      </Card>
+      {!error && (
+        <>
+          {/* 筛选栏 */}
+          <Card size="small" style={{ marginBottom: 16, borderRadius: 12 }} bodyStyle={{ padding: '12px 16px' }}>
+            <Space wrap>
+              <FilterOutlined style={{ color: '#999' }} />
+              <span style={{ color: '#666', fontSize: 13 }}>筛选：</span>
+              <Select
+                placeholder="审核状态"
+                allowClear
+                style={{ width: 120 }}
+                value={filterStatus}
+                onChange={setFilterStatus}
+                size="small"
+                options={[
+                  { value: 'pending', label: '待审核' },
+                  { value: 'approved', label: '已通过' },
+                  { value: 'rejected', label: '已拒绝' },
+                ]}
+              />
+              <Select
+                placeholder="标注来源"
+                allowClear
+                style={{ width: 120 }}
+                value={filterAi === undefined ? undefined : filterAi ? 'ai' : 'human'}
+                onChange={(v) => setFilterAi(v === 'ai' ? true : v === 'human' ? false : undefined)}
+                size="small"
+                options={[
+                  { value: 'ai', label: 'AI 生成' },
+                  { value: 'human', label: '人工标注' },
+                ]}
+              />
+            </Space>
+          </Card>
+
+          {/* 标注列表 */}
+          <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+            {loading ? (
+              <div style={{ padding: 40, textAlign: 'center' }}><Spin /></div>
+            ) : annotations.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center' }}>
+                <Empty description="暂无标注记录" />
+              </div>
+            ) : (
+              <Table
+                rowSelection={{
+                  selectedRowKeys,
+                  onChange: setSelectedRowKeys,
+                  getCheckboxProps: (record: Annotation) => ({
+                    disabled: record.review_status !== 'pending',
+                  }),
+                }}
+                columns={columns}
+                dataSource={annotations}
+                rowKey="id"
+                pagination={{
+                  current: page,
+                  pageSize,
+                  total,
+                  showSizeChanger: false,
+                  showTotal: (t) => `共 ${t} 条`,
+                  onChange: (p) => setPage(p),
+                }}
+                size="small"
+              />
+            )}
+          </Card>
+        </>
+      )}
 
       {/* 批量审核弹窗 */}
       <Modal

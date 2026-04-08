@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Menu, theme, Button, Breadcrumb } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Layout, Menu, theme, Button, Breadcrumb, Modal, Select, Spin, Empty } from 'antd';
 import {
   ProjectOutlined,
   EditOutlined,
@@ -9,8 +9,11 @@ import {
   DatabaseOutlined,
   DashboardOutlined,
   AuditOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { projectApi, datasetApi } from '@/services/api';
+import type { Project, Dataset } from '@/types';
 
 const { Header, Sider, Content } = Layout;
 
@@ -21,6 +24,14 @@ const AppLayout: React.FC = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // 数据集选择弹窗
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'annotation' | 'review'>('annotation');
+  const [pickerProjects, setPickerProjects] = useState<Project[]>([]);
+  const [pickerDatasets, setPickerDatasets] = useState<Dataset[]>([]);
+  const [pickerProjectId, setPickerProjectId] = useState<number | undefined>(undefined);
+  const [pickerLoading, setPickerLoading] = useState(false);
 
   // 根据当前路径确定选中的菜单项
   const getSelectedKey = () => {
@@ -33,6 +44,42 @@ const AppLayout: React.FC = () => {
     return 'dashboard';
   };
 
+  const openPicker = async (mode: 'annotation' | 'review') => {
+    setPickerMode(mode);
+    setPickerProjectId(undefined);
+    setPickerDatasets([]);
+    setPickerVisible(true);
+    setPickerLoading(true);
+    try {
+      const projects = await projectApi.getProjects(1, 100);
+      setPickerProjects(projects);
+      if (projects.length > 0) {
+        setPickerProjectId(projects[0].id);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (pickerProjectId) {
+      datasetApi.getDatasets(pickerProjectId).then(setPickerDatasets).catch(() => {});
+    } else {
+      setPickerDatasets([]);
+    }
+  }, [pickerProjectId]);
+
+  const handlePickerSelect = (datasetId: number) => {
+    setPickerVisible(false);
+    if (pickerMode === 'annotation') {
+      navigate(`/annotation/${datasetId}`);
+    } else {
+      navigate(`/review/${datasetId}`);
+    }
+  };
+
   const menuItems = [
     {
       key: 'dashboard',
@@ -41,28 +88,48 @@ const AppLayout: React.FC = () => {
       onClick: () => navigate('/'),
     },
     {
-      key: 'projects',
-      icon: <ProjectOutlined />,
-      label: '项目管理',
-      onClick: () => navigate('/projects'),
+      type: 'divider' as const,
     },
     {
-      key: 'annotation',
-      icon: <EditOutlined />,
-      label: '标注工作台',
-      onClick: () => navigate('/projects'),
+      key: 'grp-main',
+      label: collapsed ? null : <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>核心功能</span>,
+      type: 'group' as const,
+      children: [
+        {
+          key: 'projects',
+          icon: <ProjectOutlined />,
+          label: '项目管理',
+          onClick: () => navigate('/projects'),
+        },
+        {
+          key: 'annotation',
+          icon: <EditOutlined />,
+          label: '标注工作台',
+          onClick: () => openPicker('annotation'),
+        },
+        {
+          key: 'review',
+          icon: <AuditOutlined />,
+          label: '标注审核',
+          onClick: () => openPicker('review'),
+        },
+      ],
     },
     {
-      key: 'review',
-      icon: <AuditOutlined />,
-      label: '标注审核',
-      onClick: () => navigate('/projects'),
+      type: 'divider' as const,
     },
     {
-      key: 'ai-config',
-      icon: <RobotOutlined />,
-      label: 'AI 配置',
-      onClick: () => navigate('/ai-config'),
+      key: 'grp-tools',
+      label: collapsed ? null : <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>系统设置</span>,
+      type: 'group' as const,
+      children: [
+        {
+          key: 'ai-config',
+          icon: <RobotOutlined />,
+          label: 'AI 配置',
+          onClick: () => navigate('/ai-config'),
+        },
+      ],
     },
   ];
 
@@ -113,7 +180,10 @@ const AppLayout: React.FC = () => {
           padding: collapsed ? 0 : '0 24px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           gap: 12,
-        }}>
+          cursor: 'pointer',
+        }}
+          onClick={() => navigate('/')}
+        >
           <div style={{
             width: 40,
             height: 40,
@@ -155,7 +225,7 @@ const AppLayout: React.FC = () => {
 
         {/* 菜单区域 */}
         <div style={{
-          padding: '16px 12px',
+          padding: '8px 12px',
           height: 'calc(100vh - 72px - 60px)',
           overflowY: 'auto',
         }}>
@@ -194,6 +264,90 @@ const AppLayout: React.FC = () => {
           )}
         </div>
       </Sider>
+
+      {/* 数据集选择弹窗 */}
+      <Modal
+        title={pickerMode === 'annotation' ? '选择数据集 - 标注工作台' : '选择数据集 - 标注审核'}
+        open={pickerVisible}
+        onCancel={() => setPickerVisible(false)}
+        footer={null}
+        width={520}
+      >
+        <Spin spinning={pickerLoading}>
+          {pickerProjects.length === 0 && !pickerLoading ? (
+            <Empty description="暂无项目，请先创建项目并上传数据集" style={{ padding: '40px 0' }}>
+              <Button type="primary" onClick={() => { setPickerVisible(false); navigate('/projects/create'); }}>
+                创建项目
+              </Button>
+            </Empty>
+          ) : (
+            <div style={{ padding: '8px 0' }}>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 8, fontWeight: 500, color: '#333' }}>选择项目</div>
+                <Select
+                  style={{ width: '100%' }}
+                  placeholder="请选择项目"
+                  value={pickerProjectId}
+                  onChange={setPickerProjectId}
+                  size="large"
+                  options={pickerProjects.map(p => ({ value: p.id, label: p.name }))}
+                />
+              </div>
+              {pickerProjectId && (
+                <div>
+                  <div style={{ marginBottom: 8, fontWeight: 500, color: '#333' }}>选择数据集</div>
+                  {pickerDatasets.length === 0 ? (
+                    <Empty description="该项目暂无数据集" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ padding: '20px 0' }}>
+                      <Button size="small" onClick={() => { setPickerVisible(false); navigate(`/projects/${pickerProjectId}`); }}>
+                        上传数据集
+                      </Button>
+                    </Empty>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+                      {pickerDatasets.map(ds => (
+                        <div
+                          key={ds.id}
+                          style={{
+                            padding: '12px 16px',
+                            background: '#fafafa',
+                            borderRadius: 10,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.2s',
+                            border: '1px solid transparent',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#e6f4ff';
+                            e.currentTarget.style.borderColor = '#1890ff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#fafafa';
+                            e.currentTarget.style.borderColor = 'transparent';
+                          }}
+                          onClick={() => handlePickerSelect(ds.id)}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 600, color: '#333', marginBottom: 4 }}>
+                              <DatabaseOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                              {ds.name}
+                            </div>
+                            <span style={{ fontSize: 12, color: '#999' }}>
+                              {ds.total_items} 条数据 · 已标注 {ds.annotated_items} 条
+                            </span>
+                          </div>
+                          <RightOutlined style={{ color: '#ccc', fontSize: 12 }} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </Spin>
+      </Modal>
 
       <Layout style={{
         background: 'linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%)',
@@ -295,6 +449,14 @@ const AppLayout: React.FC = () => {
         }
         .ant-menu-item-selected::after {
           display: none;
+        }
+        .ant-menu-item-group-title {
+          padding: 12px 16px 4px !important;
+          font-size: 11px !important;
+          text-transform: uppercase !important;
+        }
+        .ant-menu-dark .ant-menu-item-group-title {
+          color: rgba(255,255,255,0.35) !important;
         }
         .ant-breadcrumb-link {
           color: #666 !important;
