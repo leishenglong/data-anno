@@ -14,6 +14,9 @@ import {
   Col,
   Progress,
   Tooltip,
+  Select,
+  Modal,
+  Input,
 } from 'antd';
 import { 
   LeftOutlined, 
@@ -24,6 +27,9 @@ import {
   SaveOutlined,
   RobotOutlined,
   HolderOutlined,
+  ThunderboltOutlined,
+  AuditOutlined,
+  FilterOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import { datasetApi, annotationApi, projectApi, aiApi } from '@/services/api';
@@ -48,6 +54,9 @@ const AnnotationWorkbench: React.FC = () => {
   const [currentAnnotation, setCurrentAnnotation] = useState<any>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [annotatedCount, setAnnotatedCount] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [aiBatching, setAiBatching] = useState(false);
+  const [aiBatchProgress, setAiBatchProgress] = useState<{ total: number; completed: number } | null>(null);
 
   const fetchItemAnnotation = async (itemId: number) => {
     try {
@@ -111,11 +120,29 @@ const AnnotationWorkbench: React.FC = () => {
       const proj = await projectApi.getProject(currentDataset.project_id);
       setProject(proj);
 
-      const itemsRes = await datasetApi.getDataItems(dsId, 1);
-      setDataItems(itemsRes.items || []);
+      // 加载所有数据项（支持状态筛选）
+      const allItems: DataItem[] = [];
+      let pageNum = 1;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const itemsRes = await datasetApi.getDataItems(dsId, pageNum, statusFilter);
+        if (itemsRes.items && itemsRes.items.length > 0) {
+          allItems.push(...itemsRes.items);
+          pageNum++;
+          // 如果返回的数量少于20，说明没有更多了
+          if (itemsRes.items.length < 20) hasMore = false;
+        } else {
+          hasMore = false;
+        }
+        // 安全限制，最多加载500条
+        if (allItems.length >= 500) hasMore = false;
+      }
+      
+      setDataItems(allItems);
 
-      if (itemsRes.items && itemsRes.items.length > 0) {
-        await fetchItemAnnotation(itemsRes.items[0].id);
+      if (allItems.length > 0) {
+        await fetchItemAnnotation(allItems[0].id);
       }
     } catch (error: any) {
       const errorMsg = error?.response?.data?.detail || error.message || '请检查网络连接或刷新页面重试';
@@ -128,7 +155,7 @@ const AnnotationWorkbench: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [datasetId]);
+  }, [datasetId, statusFilter]);
 
   useEffect(() => {
     const currentItem = dataItems[currentIndex];
@@ -220,6 +247,54 @@ const AnnotationWorkbench: React.FC = () => {
       message.error('AI 标注失败');
     }
   }, [currentItem, project]);
+
+  const handleAIBatchAnnotate = useCallback(async () => {
+    if (!dataset || !project) return;
+    
+    Modal.confirm({
+      title: 'AI 批量预标注',
+      content: `将对数据集 "${dataset.name}" 中所有待标注数据进行 AI 预标注，是否继续？`,
+      okText: '开始预标注',
+      cancelText: '取消',
+      onOk: async () => {
+        setAiBatching(true);
+        setAiBatchProgress(null);
+        try {
+          const result = await aiApi.aiBatchAnnotate({
+            dataset_id: dataset.id,
+            annotation_type: project.annotation_type,
+            config: project.config,
+          });
+          
+          message.success(`AI 预标注已启动，共 ${result.total} 条数据`);
+          
+          const pollProgress = async () => {
+            try {
+              const progress = await aiApi.getBatchProgress(result.task_id);
+              setAiBatchProgress({ total: progress.total, completed: progress.completed });
+              
+              if (progress.status === 'processing') {
+                setTimeout(pollProgress, 2000);
+              } else {
+                message.success(`AI 预标注完成！成功 ${progress.completed} 条`);
+                setAiBatching(false);
+                setAiBatchProgress(null);
+                fetchData();
+              }
+            } catch {
+              setAiBatching(false);
+              setAiBatchProgress(null);
+            }
+          };
+          
+          setTimeout(pollProgress, 1000);
+        } catch {
+          message.error('AI 预标注启动失败');
+          setAiBatching(false);
+        }
+      },
+    });
+  }, [dataset, project, fetchData]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -544,12 +619,45 @@ const AnnotationWorkbench: React.FC = () => {
 
         {/* 右侧状态 */}
         <Space size={12}>
+          <Select
+            placeholder="筛选状态"
+            allowClear
+            style={{ width: 110 }}
+            value={statusFilter}
+            onChange={(v) => { setStatusFilter(v); setCurrentIndex(0); }}
+            size="small"
+            options={[
+              { value: 'pending', label: '⏳ 待标注' },
+              { value: 'annotated', label: '✅ 已标注' },
+              { value: 'reviewed', label: '👁 已审核' },
+            ]}
+          />
           {currentItem?.status === 'annotated' && (
             <Badge status="success" text={<span style={{ color: '#52c41a', fontWeight: 500 }}>已标注</span>} />
           )}
           {currentItem?.status === 'pending' && (
             <Badge status="processing" text={<span style={{ color: '#1890ff', fontWeight: 500 }}>待标注</span>} />
           )}
+          {currentItem?.status === 'reviewed' && (
+            <Badge status="success" text={<span style={{ color: '#722ed1', fontWeight: 500 }}>已审核</span>} />
+          )}
+          <Tooltip title="AI 批量预标注整个数据集">
+            <Button 
+              icon={<ThunderboltOutlined />}
+              onClick={handleAIBatchAnnotate}
+              loading={aiBatching}
+              style={{ 
+                borderRadius: 10,
+                background: aiBatching ? undefined : 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)',
+                border: 'none',
+                color: aiBatching ? undefined : '#fff',
+              }}
+            >
+              {aiBatching && aiBatchProgress
+                ? `${aiBatchProgress.completed}/${aiBatchProgress.total}`
+                : 'AI 预标注'}
+            </Button>
+          </Tooltip>
           <Button 
             icon={<RobotOutlined />}
             onClick={handleAIAnnotate}
@@ -562,6 +670,15 @@ const AnnotationWorkbench: React.FC = () => {
           >
             AI 标注
           </Button>
+          <Tooltip title="去审核页面">
+            <Button 
+              icon={<AuditOutlined />}
+              onClick={() => navigate(`/review/${datasetId}`)}
+              style={{ borderRadius: 10 }}
+            >
+              审核
+            </Button>
+          </Tooltip>
         </Space>
       </div>
 

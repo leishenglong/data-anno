@@ -69,6 +69,19 @@ class ModelInfo(BaseModel):
     name: str
 
 
+class BatchProgressResponse(BaseModel):
+    """批量标注进度响应"""
+    task_id: str
+    status: str  # "processing" | "completed" | "failed"
+    total: int
+    completed: int
+    failed: int
+
+
+# ============ 内存中的批量任务进度追踪 ============
+_batch_tasks: Dict[str, Dict[str, Any]] = {}
+
+
 # ============ Routes ============
 
 @router.post("/annotate", response_model=AIAnnotateResponse)
@@ -166,6 +179,14 @@ async def ai_batch_annotate(
     # 将 items 转换为 dict 列表
     item_list = [{"id": item.id, "content": item.content} for item in items]
     
+    # 初始化进度追踪
+    _batch_tasks[task_id] = {
+        "status": "processing",
+        "total": len(items),
+        "completed": 0,
+        "failed": 0,
+    }
+    
     # 创建新会话执行后台任务
     from app.database import async_session
     
@@ -201,12 +222,22 @@ async def ai_batch_annotate(
                         data_item.status = "annotated"
                     
                     await session.commit()
+                    
+                    # 更新进度
+                    if task_id in _batch_tasks:
+                        _batch_tasks[task_id]["completed"] += 1
                 except Exception as e:
                     print(f"Error annotating item {item_data['id']}: {e}")
                     await session.rollback()
+                    if task_id in _batch_tasks:
+                        _batch_tasks[task_id]["failed"] += 1
                 
                 # 小延迟避免请求过快
                 await asyncio.sleep(0.1)
+        
+        # 标记任务完成
+        if task_id in _batch_tasks:
+            _batch_tasks[task_id]["status"] = "completed"
     
     import asyncio
     asyncio.create_task(batch_annotate_task())
@@ -295,3 +326,22 @@ async def test_ai_connection():
         return {"status": "success", "message": f"{provider} connection successful"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Connection failed: {str(e)}")
+
+
+@router.get("/batch/{task_id}/progress", response_model=BatchProgressResponse)
+async def get_batch_progress(task_id: str):
+    """查询批量标注任务进度
+    
+    前端可轮询此接口获取批量预标注进度
+    """
+    if task_id not in _batch_tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    task = _batch_tasks[task_id]
+    return BatchProgressResponse(
+        task_id=task_id,
+        status=task["status"],
+        total=task["total"],
+        completed=task["completed"],
+        failed=task["failed"],
+    )

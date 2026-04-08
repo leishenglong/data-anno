@@ -136,14 +136,39 @@ export const annotationApi = {
     return apiClient.post(`/items/${itemId}/annotations`, data);
   },
 
+  // 更新标注
+  updateAnnotation: (annotationId: number, data: Partial<Annotation>): Promise<Annotation> => {
+    return apiClient.put(`/annotations/${annotationId}`, data);
+  },
+
   // 审核标注
   reviewAnnotation: (annotationId: number, data: { status: 'approved' | 'rejected'; comment?: string }): Promise<Annotation> => {
     return apiClient.put(`/annotations/${annotationId}/review`, data);
   },
 
+  // 批量审核标注
+  batchReviewAnnotations: (data: { annotation_ids: number[]; status: 'approved' | 'rejected'; comment?: string }): Promise<{ message: string; count: number }> => {
+    return apiClient.post('/annotations/batch-review', data);
+  },
+
+  // 批量删除标注
+  batchDeleteAnnotations: (data: { annotation_ids: number[] }): Promise<{ message: string; count: number }> => {
+    return apiClient.delete('/annotations/batch', { data });
+  },
+
   // 获取数据项的标注
   getItemAnnotations: (itemId: number): Promise<{ items: Annotation[]; total: number }> => {
     return apiClient.get(`/items/${itemId}/annotations`);
+  },
+
+  // 获取数据集的标注列表（用于审核）
+  getDatasetAnnotations: (datasetId: number, params?: {
+    status?: string;
+    is_ai?: boolean;
+    skip?: number;
+    limit?: number;
+  }): Promise<{ items: Annotation[]; total: number }> => {
+    return apiClient.get(`/datasets/${datasetId}/annotations`, { params });
   },
 };
 
@@ -221,6 +246,11 @@ export const aiApi = {
   testConnection: (): Promise<{ status: string; message: string }> => {
     return apiClient.post('/ai/test-connection');
   },
+
+  // 查询批量标注进度
+  getBatchProgress: (taskId: string): Promise<{ task_id: string; status: string; total: number; completed: number; failed: number }> => {
+    return apiClient.get(`/ai/batch/${taskId}/progress`);
+  },
 };
 
 // 导出相关 API
@@ -231,6 +261,23 @@ export const exportApi = {
       params: { format },
       responseType: 'blob',
     });
+  },
+};
+
+// 统计相关 API
+export interface SystemOverview {
+  projects: { total: number; by_type: Record<string, number> };
+  datasets: { total: number };
+  items: { total: number; annotated: number; pending: number; reviewed: number };
+  annotations: { total: number; ai_generated: number; approved: number; pending_review: number; rejected: number };
+  progress: { annotation: number; review: number; ai_percentage: number };
+  recent_projects: { id: number; name: string; annotation_type: string; created_at: string | null }[];
+}
+
+export const statsApi = {
+  // 获取系统概览
+  getOverview: (): Promise<SystemOverview> => {
+    return apiClient.get('/stats/overview');
   },
 };
 

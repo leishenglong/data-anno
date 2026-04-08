@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db
-from app.routers import projects_router, datasets_router, annotations_router, ai_router
+from app.routers import projects_router, datasets_router, annotations_router, ai_router, stats_router
 
 
 # 确保数据目录存在
@@ -60,6 +60,7 @@ app.include_router(projects_router)
 app.include_router(datasets_router)
 app.include_router(annotations_router)
 app.include_router(ai_router)
+app.include_router(stats_router)
 
 
 @app.get("/")

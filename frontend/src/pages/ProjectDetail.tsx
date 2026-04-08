@@ -33,9 +33,12 @@ import {
   DownloadOutlined,
   FileTextOutlined,
   DashboardOutlined,
+  AuditOutlined,
+  RobotOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectApi, datasetApi, exportApi } from '@/services/api';
+import { projectApi, datasetApi, exportApi, aiApi } from '@/services/api';
 import DataUploader from '@/components/common/DataUploader';
 import type { Project, Dataset, AnnotationType } from '@/types';
 import { ANNOTATION_TYPE_CONFIG } from '@/types';
@@ -52,6 +55,11 @@ const ProjectDetail: React.FC = () => {
   const [exportingDataset, setExportingDataset] = useState<Dataset | null>(null);
   const [exportFormat, setExportFormat] = useState('json');
   const [exportLoading, setExportLoading] = useState(false);
+  const [aiBatching, setAiBatching] = useState<number | null>(null); // dataset id being AI batched
+  const [aiBatchProgress, setAiBatchProgress] = useState<{ total: number; completed: number } | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
 
   const fetchProject = async () => {
     try {
@@ -64,6 +72,9 @@ const ProjectDetail: React.FC = () => {
       setProject(projectRes);
       setDatasets(datasetsRes || []);
       setStats(statsRes);
+      // 初始化编辑表单
+      setEditName(projectRes.name);
+      setEditDesc(projectRes.description || '');
     } catch (error) {
       message.error('获取项目信息失败');
     } finally {
@@ -118,6 +129,47 @@ const ProjectDetail: React.FC = () => {
       message.error('导出失败，请检查数据集是否有已标注的数据');
     } finally {
       setExportLoading(false);
+    }
+  };
+
+  const handleAIBatchAnnotate = async (dataset: Dataset) => {
+    if (!project) return;
+    setAiBatching(dataset.id);
+    setAiBatchProgress(null);
+    try {
+      const result = await aiApi.aiBatchAnnotate({
+        dataset_id: dataset.id,
+        annotation_type: project.annotation_type,
+        config: project.config,
+      });
+      
+      message.success(`AI 预标注已启动，共 ${result.total} 条数据`);
+      
+      // 轮询进度
+      const pollProgress = async () => {
+        try {
+          const progress = await aiApi.getBatchProgress(result.task_id);
+          setAiBatchProgress({ total: progress.total, completed: progress.completed });
+          
+          if (progress.status === 'processing') {
+            setTimeout(pollProgress, 2000);
+          } else {
+            message.success(`AI 预标注完成！成功 ${progress.completed} 条，失败 ${progress.failed} 条`);
+            setAiBatching(null);
+            setAiBatchProgress(null);
+            fetchProject();
+          }
+        } catch {
+          // 轮询失败，停止
+          setAiBatching(null);
+          setAiBatchProgress(null);
+        }
+      };
+      
+      setTimeout(pollProgress, 1000);
+    } catch (error) {
+      message.error('AI 预标注启动失败，请检查 AI 配置');
+      setAiBatching(null);
     }
   };
 
@@ -265,9 +317,9 @@ const ProjectDetail: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 280,
+      width: 360,
       render: (_: any, record: Dataset) => (
-        <Space size={12}>
+        <Space size={8} wrap>
           <Tooltip title="开始标注">
             <Button
               type="primary"
@@ -283,15 +335,41 @@ const ProjectDetail: React.FC = () => {
               标注
             </Button>
           </Tooltip>
+          <Tooltip title="审核标注结果">
+            <Button
+              icon={<AuditOutlined />}
+              onClick={() => navigate(`/review/${record.id}`)}
+              disabled={record.annotated_items === 0}
+              style={{ borderRadius: 8 }}
+            >
+              审核
+            </Button>
+          </Tooltip>
+          <Tooltip title="AI 一键预标注 - 自动标注所有待标注数据">
+            <Button
+              icon={<ThunderboltOutlined />}
+              loading={aiBatching === record.id}
+              onClick={() => handleAIBatchAnnotate(record)}
+              disabled={record.annotated_items >= record.total_items}
+              style={{
+                borderRadius: 8,
+                background: aiBatching === record.id ? undefined : 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)',
+                border: 'none',
+                color: aiBatching === record.id ? undefined : '#fff',
+              }}
+            >
+              {aiBatching === record.id && aiBatchProgress
+                ? `AI ${aiBatchProgress.completed}/${aiBatchProgress.total}`
+                : 'AI 预标注'}
+            </Button>
+          </Tooltip>
           <Tooltip title="导出标注结果">
             <Button
               icon={<DownloadOutlined />}
               onClick={() => handleExportClick(record)}
               disabled={record.annotated_items === 0}
               style={{ borderRadius: 8 }}
-            >
-              导出
-            </Button>
+            />
           </Tooltip>
           <Popconfirm
             title="确认删除"
@@ -304,10 +382,9 @@ const ProjectDetail: React.FC = () => {
             <Button 
               danger 
               icon={<DeleteOutlined />}
+              size="small"
               style={{ borderRadius: 8 }}
-            >
-              删除
-            </Button>
+            />
           </Popconfirm>
         </Space>
       ),
@@ -411,6 +488,7 @@ const ProjectDetail: React.FC = () => {
               </div>
               <Button 
                 icon={<EditOutlined />} 
+                onClick={() => setEditModalVisible(true)}
                 style={{ borderRadius: 8 }}
               >
                 编辑项目
@@ -722,6 +800,51 @@ const ProjectDetail: React.FC = () => {
           fetchProject();
         }}
       />
+
+      {/* 编辑项目弹窗 */}
+      <Modal
+        title="编辑项目"
+        open={editModalVisible}
+        onOk={async () => {
+          if (!project) return;
+          try {
+            await projectApi.updateProject(project.id, {
+              name: editName,
+              description: editDesc,
+            });
+            message.success('项目更新成功');
+            setEditModalVisible(false);
+            fetchProject();
+          } catch {
+            message.error('更新失败');
+          }
+        }}
+        onCancel={() => setEditModalVisible(false)}
+        okText="保存"
+        cancelText="取消"
+      >
+        <div style={{ padding: '16px 0' }}>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>项目名称</div>
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="输入项目名称"
+              size="large"
+            />
+          </div>
+          <div>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>项目描述</div>
+            <Input.TextArea
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              placeholder="输入项目描述"
+              rows={4}
+              size="large"
+            />
+          </div>
+        </div>
+      </Modal>
 
       {/* 导出弹窗 */}
       <Modal

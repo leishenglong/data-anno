@@ -7,6 +7,8 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   DatabaseOutlined,
+  DashboardOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -23,13 +25,21 @@ const AppLayout: React.FC = () => {
   // 根据当前路径确定选中的菜单项
   const getSelectedKey = () => {
     const path = location.pathname;
+    if (path === '/') return 'dashboard';
     if (path.startsWith('/projects')) return 'projects';
     if (path.startsWith('/annotation')) return 'annotation';
+    if (path.startsWith('/review')) return 'review';
     if (path.startsWith('/ai-config')) return 'ai-config';
-    return 'projects';
+    return 'dashboard';
   };
 
   const menuItems = [
+    {
+      key: 'dashboard',
+      icon: <DashboardOutlined />,
+      label: '系统概览',
+      onClick: () => navigate('/'),
+    },
     {
       key: 'projects',
       icon: <ProjectOutlined />,
@@ -40,6 +50,12 @@ const AppLayout: React.FC = () => {
       key: 'annotation',
       icon: <EditOutlined />,
       label: '标注工作台',
+      onClick: () => navigate('/projects'),
+    },
+    {
+      key: 'review',
+      icon: <AuditOutlined />,
+      label: '标注审核',
       onClick: () => navigate('/projects'),
     },
     {
@@ -64,6 +80,8 @@ const AppLayout: React.FC = () => {
       }
     } else if (paths[0] === 'annotation') {
       items.push({ title: '标注工作台' });
+    } else if (paths[0] === 'review') {
+      items.push({ title: '标注审核' });
     } else if (paths[0] === 'ai-config') {
       items.push({ title: 'AI 配置' });
     }
