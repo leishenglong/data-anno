@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: data-anno-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/anno.db
+    restart: unless-stopped
+    networks:
+      - data-anno-network
+
+  frontend:
+    build: ./frontend
+    container_name: data-anno-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - data-anno-network
+
+networks:
+  data-anno-network:
+    driver: bridge
