@@ -236,7 +236,7 @@ const ProjectCreate: React.FC = () => {
         border: '1px solid rgba(0,0,0,0.06)',
         boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
       }}
-      bodyStyle={{ padding: 32 }}
+      styles={{ body: { padding: 32 } }}
     >
       <div style={{ marginBottom: 24 }}>
         <div style={{
@@ -301,7 +301,7 @@ const ProjectCreate: React.FC = () => {
         border: '1px solid rgba(0,0,0,0.06)',
         boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
       }}
-      bodyStyle={{ padding: 32 }}
+      styles={{ body: { padding: 32 } }}
     >
       <div style={{ marginBottom: 24 }}>
         <div style={{
@@ -403,7 +403,7 @@ const ProjectCreate: React.FC = () => {
             border: '1px solid rgba(0,0,0,0.06)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
           }}
-          bodyStyle={{ padding: 32 }}
+          styles={{ body: { padding: 32 } }}
         >
           <div style={{ marginBottom: 24 }}>
             <div style={{
@@ -521,7 +521,7 @@ const ProjectCreate: React.FC = () => {
               boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
               marginBottom: 20,
             }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <div style={{
               padding: 16,
@@ -579,7 +579,7 @@ const ProjectCreate: React.FC = () => {
               border: '1px solid rgba(0,0,0,0.06)',
               boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
             }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <div style={{
               padding: 16,
@@ -631,7 +631,7 @@ const ProjectCreate: React.FC = () => {
             border: '1px solid rgba(0,0,0,0.06)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
           }}
-          bodyStyle={{ padding: 32 }}
+          styles={{ body: { padding: 32 } }}
         >
           <div style={{ marginBottom: 24 }}>
             <div style={{

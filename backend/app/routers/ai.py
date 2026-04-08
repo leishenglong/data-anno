@@ -69,6 +69,14 @@ class ModelInfo(BaseModel):
     name: str
 
 
+class ProviderPreset(BaseModel):
+    """提供商预设"""
+    id: str
+    name: str
+    base_url: str
+    models: List[ModelInfo]
+
+
 class BatchProgressResponse(BaseModel):
     """批量标注进度响应"""
     task_id: str
@@ -345,3 +353,17 @@ async def get_batch_progress(task_id: str):
         completed=task["completed"],
         failed=task["failed"],
     )
+
+
+@router.get("/providers", response_model=List[ProviderPreset])
+async def get_provider_presets():
+    """获取所有 AI 提供商预设配置"""
+    presets = []
+    for pid, preset in ai_service.PROVIDER_PRESETS.items():
+        presets.append(ProviderPreset(
+            id=pid,
+            name=preset["name"],
+            base_url=preset["base_url"],
+            models=[ModelInfo(id=m["id"], name=m["name"]) for m in preset["models"]]
+        ))
+    return presets

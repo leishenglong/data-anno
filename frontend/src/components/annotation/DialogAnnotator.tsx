@@ -165,7 +165,7 @@ const DialogAnnotator: React.FC<DialogAnnotatorProps> = ({
             <Card
               size="small"
               style={{ marginTop: 8, background: '#fafafa' }}
-              bodyStyle={{ padding: 12 }}
+              styles={{ body: { padding: 12 } }}
             >
               <Space direction="vertical" style={{ width: '100%' }} size="small">
                 <div>

@@ -1,6 +1,6 @@
 """System statistics API - 系统统计接口"""
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -27,9 +27,9 @@ async def get_system_overview(db: AsyncSession = Depends(get_db)):
     items_result = await db.execute(
         select(
             func.count(DataItem.id),
-            func.sum(func.case((DataItem.status == "annotated", 1), else_=0)),
-            func.sum(func.case((DataItem.status == "pending", 1), else_=0)),
-            func.sum(func.case((DataItem.status == "reviewed", 1), else_=0))
+            func.sum(case((DataItem.status == "annotated", 1), else_=0)),
+            func.sum(case((DataItem.status == "pending", 1), else_=0)),
+            func.sum(case((DataItem.status == "reviewed", 1), else_=0))
         ).select_from(DataItem)
     )
     row = items_result.one()
@@ -42,10 +42,10 @@ async def get_system_overview(db: AsyncSession = Depends(get_db)):
     annotations_result = await db.execute(
         select(
             func.count(Annotation.id),
-            func.sum(func.case((Annotation.is_ai_generated == True, 1), else_=0)),
-            func.sum(func.case((Annotation.review_status == "approved", 1), else_=0)),
-            func.sum(func.case((Annotation.review_status == "pending", 1), else_=0)),
-            func.sum(func.case((Annotation.review_status == "rejected", 1), else_=0))
+            func.sum(case((Annotation.is_ai_generated == True, 1), else_=0)),
+            func.sum(case((Annotation.review_status == "approved", 1), else_=0)),
+            func.sum(case((Annotation.review_status == "pending", 1), else_=0)),
+            func.sum(case((Annotation.review_status == "rejected", 1), else_=0))
         ).select_from(Annotation)
     )
     ann_row = annotations_result.one()

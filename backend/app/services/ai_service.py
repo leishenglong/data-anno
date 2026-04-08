@@ -330,6 +330,73 @@ Please respond ONLY in the following JSON format:
             await asyncio.sleep(0.1)
         return results
 
+    # 各提供商的预设配置
+    PROVIDER_PRESETS = {
+        "openai": {
+            "name": "OpenAI",
+            "base_url": "https://api.openai.com/v1",
+            "models": [
+                {"id": "gpt-4o-mini", "name": "GPT-4o Mini"},
+                {"id": "gpt-4o", "name": "GPT-4o"},
+                {"id": "gpt-4-turbo", "name": "GPT-4 Turbo"},
+                {"id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo"},
+            ]
+        },
+        "zhipu": {
+            "name": "智谱 AI (GLM)",
+            "base_url": "https://open.bigmodel.cn/api/paas/v4",
+            "models": [
+                {"id": "glm-4-flash", "name": "GLM-4 Flash (免费)"},
+                {"id": "glm-4-air", "name": "GLM-4 Air"},
+                {"id": "glm-4-airx", "name": "GLM-4 AirX"},
+                {"id": "glm-4-long", "name": "GLM-4 Long"},
+                {"id": "glm-4-plus", "name": "GLM-4 Plus"},
+                {"id": "glm-4", "name": "GLM-4"},
+            ]
+        },
+        "qwen": {
+            "name": "通义千问 (Qwen)",
+            "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "models": [
+                {"id": "qwen-turbo", "name": "Qwen Turbo"},
+                {"id": "qwen-plus", "name": "Qwen Plus"},
+                {"id": "qwen-max", "name": "Qwen Max"},
+                {"id": "qwen-long", "name": "Qwen Long"},
+                {"id": "qwen2.5-72b-instruct", "name": "Qwen2.5-72B"},
+                {"id": "qwen2.5-32b-instruct", "name": "Qwen2.5-32B"},
+                {"id": "qwen2.5-14b-instruct", "name": "Qwen2.5-14B"},
+                {"id": "qwen2.5-7b-instruct", "name": "Qwen2.5-7B"},
+            ]
+        },
+        "kimi": {
+            "name": "Kimi (Moonshot)",
+            "base_url": "https://api.moonshot.cn/v1",
+            "models": [
+                {"id": "moonshot-v1-8k", "name": "Moonshot V1 8K"},
+                {"id": "moonshot-v1-32k", "name": "Moonshot V1 32K"},
+                {"id": "moonshot-v1-128k", "name": "Moonshot V1 128K"},
+            ]
+        },
+        "minimax": {
+            "name": "MiniMax",
+            "base_url": "https://api.minimax.chat/v1",
+            "models": [
+                {"id": "MiniMax-Text-01", "name": "MiniMax-Text-01"},
+                {"id": "abab6.5s-chat", "name": "ABAB 6.5s"},
+                {"id": "abab6.5-chat", "name": "ABAB 6.5"},
+                {"id": "abab6.5g-chat", "name": "ABAB 6.5G"},
+            ]
+        },
+        "deepseek": {
+            "name": "DeepSeek",
+            "base_url": "https://api.deepseek.com/v1",
+            "models": [
+                {"id": "deepseek-chat", "name": "DeepSeek Chat"},
+                {"id": "deepseek-reasoner", "name": "DeepSeek Reasoner"},
+            ]
+        },
+    }
+
     async def get_available_models(self) -> List[Dict[str, str]]:
         """获取可用模型列表"""
         config = self._load_config()
@@ -347,13 +414,9 @@ Please respond ONLY in the following JSON format:
             except Exception as e:
                 return [{"id": "llama3.1", "name": "llama3.1 (default)"}]
         else:
-            # OpenAI 常用模型列表
-            return [
-                {"id": "gpt-4o-mini", "name": "GPT-4o Mini"},
-                {"id": "gpt-4o", "name": "GPT-4o"},
-                {"id": "gpt-4-turbo", "name": "GPT-4 Turbo"},
-                {"id": "gpt-3.5-turbo", "name": "GPT-3.5 Turbo"},
-            ]
+            # 根据提供商返回预设模型列表
+            preset = self.PROVIDER_PRESETS.get(provider, self.PROVIDER_PRESETS.get("openai"))
+            return preset["models"]
 
 
 # 全局 AI 服务实例

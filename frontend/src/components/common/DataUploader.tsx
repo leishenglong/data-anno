@@ -159,7 +159,7 @@ const DataUploader: React.FC<DataUploaderProps> = ({
       footer={null}
       width={520}
       centered
-      bodyStyle={{ padding: 24 }}
+      styles={{ body: { padding: 24 } }}
     >
       <Form
         form={form}

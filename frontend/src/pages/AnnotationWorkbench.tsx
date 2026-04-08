@@ -718,7 +718,7 @@ const AnnotationWorkbench: React.FC = () => {
         {/* 左侧数据列表 */}
         <Col span={5} style={{ height: '100%', overflow: 'hidden' }}>
           <Card 
-            bodyStyle={{ padding: 0, height: '100%', overflow: 'auto' }} 
+            styles={{ body: { padding: 0, height: '100%', overflow: 'auto' } }} 
             style={{ 
               height: '100%',
               borderRadius: 16,
@@ -813,11 +813,11 @@ const AnnotationWorkbench: React.FC = () => {
               borderRadius: 16,
               border: '1px solid rgba(0,0,0,0.06)',
             }}
-            bodyStyle={{ 
+            styles={{ body: { 
               height: 'calc(100% - 60px)', 
               overflow: 'auto',
               padding: 20,
-            }}
+            } }}
           >
             {renderContent()}
             
@@ -885,11 +885,11 @@ const AnnotationWorkbench: React.FC = () => {
               borderRadius: 16,
               border: '1px solid rgba(0,0,0,0.06)',
             }}
-            bodyStyle={{ 
+            styles={{ body: { 
               height: 'calc(100% - 60px)', 
               overflow: 'auto',
               padding: 20,
-            }}
+            } }}
           >
             {renderAnnotationPanel()}
           </Card>

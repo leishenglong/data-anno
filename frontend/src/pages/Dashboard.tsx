@@ -33,8 +33,8 @@ const Dashboard: React.FC = () => {
     try {
       const data = await statsApi.getOverview();
       setOverview(data);
-    } catch {
-      // 静默处理
+    } catch (e) {
+      console.error('Failed to fetch overview:', e);
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
         <Col xs={12} sm={6}>
           <Card
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <Statistic
               title={<span style={{ color: '#666' }}>项目数量</span>}
@@ -122,7 +122,7 @@ const Dashboard: React.FC = () => {
         <Col xs={12} sm={6}>
           <Card
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <Statistic
               title={<span style={{ color: '#666' }}>数据集</span>}
@@ -136,7 +136,7 @@ const Dashboard: React.FC = () => {
         <Col xs={12} sm={6}>
           <Card
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <Statistic
               title={<span style={{ color: '#666' }}>总数据量</span>}
@@ -150,7 +150,7 @@ const Dashboard: React.FC = () => {
         <Col xs={12} sm={6}>
           <Card
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <Statistic
               title={<span style={{ color: '#666' }}>标注记录</span>}
@@ -169,12 +169,12 @@ const Dashboard: React.FC = () => {
           <Card
             title={<Space><CheckCircleOutlined style={{ color: '#52c41a' }} />标注进度</Space>}
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <Progress
-                type="circle"
-                percent={progress.annotation}
+                type="dashboard"
+                percent={Number(progress.annotation) || 0}
                 size={140}
                 strokeColor={{ '0%': '#1890ff', '100%': '#52c41a' }}
                 format={(p) => <span style={{ fontSize: 24, fontWeight: 700 }}>{p}%</span>}
@@ -200,12 +200,12 @@ const Dashboard: React.FC = () => {
           <Card
             title={<Space><RobotOutlined style={{ color: '#722ed1' }} />AI 辅助统计</Space>}
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <Progress
-                type="circle"
-                percent={progress.ai_percentage}
+                type="dashboard"
+                percent={Number(progress.ai_percentage) || 0}
                 size={140}
                 strokeColor={{ '0%': '#722ed1', '100%': '#eb2f96' }}
                 format={(p) => <span style={{ fontSize: 24, fontWeight: 700 }}>{p}%</span>}
@@ -236,7 +236,7 @@ const Dashboard: React.FC = () => {
           <Card
             title={<Space><ProjectOutlined style={{ color: '#1890ff' }} />项目类型分布</Space>}
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             {Object.keys(projects.by_type).length === 0 ? (
               <Empty description="暂无项目" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -276,7 +276,7 @@ const Dashboard: React.FC = () => {
               </Button>
             }
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 0 }}
+            styles={{ body: { padding: 0 } }}
           >
             {recent_projects.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center' }}>
@@ -341,7 +341,7 @@ const Dashboard: React.FC = () => {
           <Card
             title={<Space><AuditOutlined style={{ color: '#1890ff' }} />快速入口</Space>}
             style={{ borderRadius: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            bodyStyle={{ padding: 24 }}
+            styles={{ body: { padding: 24 } }}
           >
             <Row gutter={[16, 16]}>
               <Col xs={12} sm={6}>

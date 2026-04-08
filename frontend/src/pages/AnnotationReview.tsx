@@ -272,17 +272,17 @@ const AnnotationReview: React.FC = () => {
       {/* 统计信息 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col span={8}>
-          <Card size="small" bodyStyle={{ padding: 16 }}>
+          <Card size="small" styles={{ body: { padding: 16 } }}>
             <Statistic title="待审核" value={pendingCount} valueStyle={{ color: '#1890ff' }} prefix={<AuditOutlined />} />
           </Card>
         </Col>
         <Col span={8}>
-          <Card size="small" bodyStyle={{ padding: 16 }}>
+          <Card size="small" styles={{ body: { padding: 16 } }}>
             <Statistic title="已通过" value={approvedCount} valueStyle={{ color: '#52c41a' }} prefix={<CheckCircleOutlined />} />
           </Card>
         </Col>
         <Col span={8}>
-          <Card size="small" bodyStyle={{ padding: 16 }}>
+          <Card size="small" styles={{ body: { padding: 16 } }}>
             <Statistic title="总标注" value={total} valueStyle={{ color: '#722ed1' }} prefix={<AuditOutlined />} />
           </Card>
         </Col>
@@ -309,7 +309,7 @@ const AnnotationReview: React.FC = () => {
       {!error && (
         <>
           {/* 筛选栏 */}
-          <Card size="small" style={{ marginBottom: 16, borderRadius: 12 }} bodyStyle={{ padding: '12px 16px' }}>
+          <Card size="small" style={{ marginBottom: 16, borderRadius: 12 }} styles={{ body: { padding: '12px 16px' } }}>
             <Space wrap>
               <FilterOutlined style={{ color: '#999' }} />
               <span style={{ color: '#666', fontSize: 13 }}>筛选：</span>
@@ -342,7 +342,7 @@ const AnnotationReview: React.FC = () => {
           </Card>
 
           {/* 标注列表 */}
-          <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+          <Card style={{ borderRadius: 12 }} styles={{ body: { padding: 0 } }}>
             {loading ? (
               <div style={{ padding: 40, textAlign: 'center' }}><Spin /></div>
             ) : annotations.length === 0 ? (

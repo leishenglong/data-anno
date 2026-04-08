@@ -93,7 +93,7 @@ const ScoreReviewer: React.FC<ScoreReviewerProps> = ({
         key={dimension.name}
         size="small"
         style={{ marginBottom: 16 }}
-        bodyStyle={{ padding: 16 }}
+        styles={{ body: { padding: 16 } }}
       >
         <Row gutter={16} align="middle">
           <Col span={6}>

@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -97,9 +97,9 @@ async def get_project_stats(project_id: int, db: AsyncSession = Depends(get_db))
     items_result = await db.execute(
         select(
             func.count(DataItem.id),
-            func.sum(func.case((DataItem.status == "annotated", 1), else_=0)),
-            func.sum(func.case((DataItem.status == "pending", 1), else_=0)),
-            func.sum(func.case((DataItem.status == "reviewed", 1), else_=0))
+            func.sum(case((DataItem.status == "annotated", 1), else_=0)),
+            func.sum(case((DataItem.status == "pending", 1), else_=0)),
+            func.sum(case((DataItem.status == "reviewed", 1), else_=0))
         )
         .select_from(DataItem)
         .join(Dataset, DataItem.dataset_id == Dataset.id)

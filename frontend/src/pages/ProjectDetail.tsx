@@ -450,7 +450,7 @@ const ProjectDetail: React.FC = () => {
               border: '1px solid rgba(0,0,0,0.06)',
               boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
             }}
-            bodyStyle={{ padding: 28 }}
+            styles={{ body: { padding: 28 } }}
           >
             {/* 项目头部 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -560,8 +560,8 @@ const ProjectDetail: React.FC = () => {
                   gap: 16,
                 }}>
                   <Progress 
-                    type="circle" 
-                    percent={overallProgress} 
+                    type="dashboard" 
+                    percent={Number(overallProgress) || 0} 
                     size={64}
                     strokeColor={{
                       '0%': '#1890ff',
@@ -627,7 +627,7 @@ const ProjectDetail: React.FC = () => {
               border: '1px solid rgba(0,0,0,0.06)',
               boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
             }}
-            bodyStyle={{ padding: 0 }}
+            styles={{ body: { padding: 0 } }}
           >
             {datasets.length === 0 ? (
               <div style={{ padding: '60px 0', textAlign: 'center' }}>
@@ -680,7 +680,7 @@ const ProjectDetail: React.FC = () => {
                 border: '1px solid rgba(0,0,0,0.06)',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
               }}
-              bodyStyle={{ padding: 24 }}
+              styles={{ body: { padding: 24 } }}
             >
               <Row gutter={[24, 16]}>
                 {project.config.labels && project.config.labels.length > 0 && (

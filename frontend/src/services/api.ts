@@ -173,8 +173,10 @@ export const annotationApi = {
 };
 
 // AI 相关 API
+export type AIProvider = 'openai' | 'zhipu' | 'qwen' | 'kimi' | 'minimax' | 'deepseek' | 'ollama';
+
 export interface AIConfig {
-  provider: 'openai' | 'ollama';
+  provider: AIProvider;
   openai_api_key: string;
   openai_base_url: string;
   openai_model: string;
@@ -216,6 +218,13 @@ export interface ModelInfo {
   name: string;
 }
 
+export interface ProviderPreset {
+  id: AIProvider;
+  name: string;
+  base_url: string;
+  models: ModelInfo[];
+}
+
 export const aiApi = {
   // AI 单条标注
   aiAnnotate: (data: AIAnnotateRequest): Promise<AIAnnotateResponse> => {
@@ -240,6 +249,11 @@ export const aiApi = {
   // 获取可用模型列表
   getAvailableModels: (): Promise<ModelInfo[]> => {
     return apiClient.get('/ai/models');
+  },
+
+  // 获取提供商预设列表
+  getProviderPresets: (): Promise<ProviderPreset[]> => {
+    return apiClient.get('/ai/providers');
   },
 
   // 测试 AI 连接

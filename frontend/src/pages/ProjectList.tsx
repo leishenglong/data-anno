@@ -216,7 +216,7 @@ const ProjectList: React.FC = () => {
                     overflow: 'hidden',
                     position: 'relative',
                   }}
-                  bodyStyle={{ padding: 20 }}
+                  styles={{ body: { padding: 20 } }}
                   className="project-card"
                 >
                   {/* 顶部标签 */}
