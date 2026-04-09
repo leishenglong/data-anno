@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  Steps, 
-  Form, 
-  Input, 
-  Button, 
-  Card, 
-  Space, 
+import {
+  Steps,
+  Form,
+  Input,
+  Button,
+  Card,
+  Space,
   Tag,
   message,
   Row,
   Col,
   ColorPicker,
+  Alert,
 } from 'antd';
 import {
   TagsOutlined,
@@ -173,6 +174,8 @@ const ProjectCreate: React.FC = () => {
         if (annotationType === 'score_review') {
           config.max_score = 5;
         }
+      } else if (annotationType === 'incident_report') {
+        // incident_report 不需要额外配置
       }
 
       const description = projectDescription?.trim() || undefined;
@@ -629,8 +632,8 @@ const ProjectCreate: React.FC = () => {
 
     if (annotationType === 'score_review' || annotationType === 'dialog') {
       return (
-        <Card 
-          style={{ 
+        <Card
+          style={{
             maxWidth: 680,
             margin: '0 auto',
             borderRadius: 16,
@@ -659,7 +662,7 @@ const ProjectCreate: React.FC = () => {
               定义评分任务的评估维度
             </p>
           </div>
-          
+
           {annotationType === 'score_review' && (
             <div style={{
               padding: 16,
@@ -674,7 +677,7 @@ const ProjectCreate: React.FC = () => {
               <span style={{ fontSize: 24, fontWeight: 700, color: '#1890ff' }}>5 分</span>
             </div>
           )}
-          
+
           <div style={{
             padding: 20,
             background: '#fafafa',
@@ -695,7 +698,7 @@ const ProjectCreate: React.FC = () => {
               </Button>
             </Space>
           </div>
-          
+
           <div style={{ minHeight: 120 }}>
             {scoreDimensions.length > 0 ? (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -711,8 +714,8 @@ const ProjectCreate: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div style={{ 
-                textAlign: 'center', 
+              <div style={{
+                textAlign: 'center',
                 padding: '40px 0',
                 color: '#999',
               }}>
@@ -732,6 +735,49 @@ const ProjectCreate: React.FC = () => {
               </div>
             )}
           </div>
+        </Card>
+      );
+    }
+
+    if (annotationType === 'incident_report') {
+      return (
+        <Card
+          style={{
+            maxWidth: 680,
+            margin: '0 auto',
+            borderRadius: 16,
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+          }}
+          styles={{ body: { padding: 32 } }}
+        >
+          <div style={{ marginBottom: 24 }}>
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #f5222d 0%, #fa541c 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}>
+              <FileTextOutlined style={{ fontSize: 28, color: '#fff' }} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: '#333' }}>
+              风险事件记录
+            </h3>
+            <p style={{ margin: '8px 0 0 0', color: '#999', fontSize: 14 }}>
+              记录和跟踪风险事件信息
+            </p>
+          </div>
+
+          <Alert
+            message="风险事件记录"
+            description="风险事件记录类型无需额外配置。创建项目后可开始标注。"
+            type="info"
+            showIcon
+          />
         </Card>
       );
     }
