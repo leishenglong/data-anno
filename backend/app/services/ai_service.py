@@ -56,6 +56,8 @@ class AIService:
         return {
             "text_classification": """You are a text classification assistant. Please classify the following text into one or more categories from the provided labels.
 
+{{examples}}
+
 Text: {{text}}
 
 Available labels: {{labels}}
