@@ -111,7 +111,9 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
             <Select
               value={att.type}
               onChange={(val) => {
-                attachments[index].type = val;
+                const newAttachments = [...attachments];
+                newAttachments[index] = { ...newAttachments[index], type: val };
+                form.setFieldValue('attachments', newAttachments);
                 handleValuesChange();
               }}
               style={{ width: 100 }}
@@ -124,7 +126,9 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
               placeholder="请输入URL"
               value={att.url}
               onChange={(e) => {
-                attachments[index].url = e.target.value;
+                const newAttachments = [...attachments];
+                newAttachments[index] = { ...newAttachments[index], url: e.target.value };
+                form.setFieldValue('attachments', newAttachments);
                 handleValuesChange();
               }}
               style={{ flex: 1 }}
