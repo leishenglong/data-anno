@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { 
-  Card, 
-  Button, 
-  Space, 
-  Tag, 
-  Empty, 
-  Spin, 
+import {
+  Card,
+  Button,
+  Space,
+  Tag,
+  Empty,
+  Spin,
   message,
   List,
   Badge,
@@ -15,13 +15,11 @@ import {
   Progress,
   Tooltip,
   Select,
-  Modal,
-  Input,
 } from 'antd';
-import { 
-  LeftOutlined, 
-  RightOutlined, 
-  CheckOutlined, 
+import {
+  LeftOutlined,
+  RightOutlined,
+  CheckOutlined,
   StepForwardOutlined,
   ArrowLeftOutlined,
   SaveOutlined,
@@ -29,7 +27,6 @@ import {
   HolderOutlined,
   ThunderboltOutlined,
   AuditOutlined,
-  FilterOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import { datasetApi, annotationApi, projectApi, aiApi } from '@/services/api';
@@ -261,50 +258,53 @@ const AnnotationWorkbench: React.FC = () => {
 
   const handleAIBatchAnnotate = useCallback(async () => {
     if (!dataset || !project) return;
-    
-    Modal.confirm({
-      title: 'AI 批量预标注',
-      content: `将对数据集 "${dataset.name}" 中所有待标注数据进行 AI 预标注，是否继续？`,
-      okText: '开始预标注',
-      cancelText: '取消',
-      onOk: async () => {
-        setAiBatching(true);
-        setAiBatchProgress(null);
+
+    const hide = message.loading('正在启动 AI 批量预标注...');
+
+    setAiBatching(true);
+    setAiBatchProgress(null);
+    try {
+      const result = await aiApi.aiBatchAnnotate({
+        dataset_id: dataset.id,
+        annotation_type: project.annotation_type,
+        config: project.config,
+      });
+
+      hide();
+
+      if (result.total === 0) {
+        message.info('没有待标注的数据');
+        setAiBatching(false);
+        return;
+      }
+
+      message.success(`AI 预标注已启动，共 ${result.total} 条数据`);
+
+      const pollProgress = async () => {
         try {
-          const result = await aiApi.aiBatchAnnotate({
-            dataset_id: dataset.id,
-            annotation_type: project.annotation_type,
-            config: project.config,
-          });
-          
-          message.success(`AI 预标注已启动，共 ${result.total} 条数据`);
-          
-          const pollProgress = async () => {
-            try {
-              const progress = await aiApi.getBatchProgress(result.task_id);
-              setAiBatchProgress({ total: progress.total, completed: progress.completed });
-              
-              if (progress.status === 'processing') {
-                setTimeout(pollProgress, 2000);
-              } else {
-                message.success(`AI 预标注完成！成功 ${progress.completed} 条`);
-                setAiBatching(false);
-                setAiBatchProgress(null);
-                fetchData();
-              }
-            } catch {
-              setAiBatching(false);
-              setAiBatchProgress(null);
-            }
-          };
-          
-          setTimeout(pollProgress, 1000);
+          const progress = await aiApi.getBatchProgress(result.task_id);
+          setAiBatchProgress({ total: progress.total, completed: progress.completed });
+
+          if (progress.status === 'processing') {
+            setTimeout(pollProgress, 2000);
+          } else {
+            message.success(`AI 预标注完成！成功 ${progress.completed} 条`);
+            setAiBatching(false);
+            setAiBatchProgress(null);
+            fetchData();
+          }
         } catch {
-          message.error('AI 预标注启动失败');
           setAiBatching(false);
+          setAiBatchProgress(null);
         }
-      },
-    });
+      };
+
+      setTimeout(pollProgress, 1000);
+    } catch {
+      hide();
+      message.error('AI 预标注启动失败');
+      setAiBatching(false);
+    }
   }, [dataset, project, fetchData]);
 
   useEffect(() => {

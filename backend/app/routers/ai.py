@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
@@ -172,17 +173,17 @@ async def ai_batch_annotate(
     
     if not items:
         return AIBatchResponse(
-            task_id=f"batch_{request.dataset_id}_{id(request)}",
+            task_id=f"batch_{request.dataset_id}_{uuid.uuid4().hex[:8]}",
             status="completed",
             total=0
         )
-    
+
     # 确定标注类型和配置
     annotation_type = request.annotation_type or project.annotation_type
     config = request.config or project.config or {}
-    
+
     # 启动后台任务
-    task_id = f"batch_{request.dataset_id}_{id(request)}"
+    task_id = f"batch_{request.dataset_id}_{uuid.uuid4().hex[:8]}"
     
     # 将 items 转换为 dict 列表
     item_list = [{"id": item.id, "content": item.content} for item in items]
