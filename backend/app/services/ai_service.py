@@ -417,10 +417,19 @@ Please respond ONLY in the following JSON format:
                               config: Dict[str, Any], prompt_template: str = None) -> Dict[str, Any]:
         """单条 AI 标注，返回标注结果"""
         prompt = self._build_prompt(item_content, annotation_type, config, prompt_template)
-        
+
         try:
             response = await self._call_llm(prompt)
             result = self._parse_response(response, annotation_type, item_content.get("text", ""))
+
+            # 检查是否是解析错误，如果是则重试一次
+            if result.get("parse_error"):
+                retry_result = await self._retry_with_strict_prompt(
+                    item_content, annotation_type, config
+                )
+                if retry_result and not retry_result.get("parse_error"):
+                    result = retry_result
+
             result["is_ai_generated"] = True
             return result
         except Exception as e:
@@ -430,6 +439,49 @@ Please respond ONLY in the following JSON format:
                 "is_ai_generated": True,
                 "error": True
             }
+
+    async def _retry_with_strict_prompt(self, item_content: Dict[str, Any],
+                                         annotation_type: str,
+                                         config: Dict[str, Any]) -> Dict[str, Any]:
+        """使用严格格式要求重试"""
+        strict_prompt = f"""请以纯 JSON 格式输出，不要包含任何解释、 markdown 标记或其他内容。
+只输出一个有效的 JSON 对象。
+
+任务：{self._get_task_description(annotation_type)}
+
+数据：{json.dumps(item_content, ensure_ascii=False)}
+
+必须严格遵循以下 JSON 格式：
+{self._get_strict_schema(annotation_type)}"""
+
+        try:
+            response = await self._call_llm(strict_prompt)
+            result = self._parse_response(response, annotation_type, item_content.get("text", ""))
+            return result
+        except Exception:
+            return None
+
+    def _get_task_description(self, annotation_type: str) -> str:
+        """获取任务描述"""
+        descriptions = {
+            "text_classification": "文本分类",
+            "ner": "命名实体识别",
+            "relation_extraction": "关系抽取",
+            "dialog": "对话质量评估",
+            "score_review": "评分评审",
+        }
+        return descriptions.get(annotation_type, annotation_type)
+
+    def _get_strict_schema(self, annotation_type: str) -> str:
+        """获取严格 JSON Schema"""
+        schemas = {
+            "text_classification": '{"labels": ["标签1", "标签2"]}',
+            "ner": '{"entities": [{"text": "实体", "label": "类型", "start": 0, "end": 5}]}',
+            "relation_extraction": '{"entities": [], "relations": []}',
+            "dialog": '{"quality": "good", "issues": [], "suggestions": [], "score": 85}',
+            "score_review": '{"scores": {}, "total_score": 0, "comments": ""}',
+        }
+        return schemas.get(annotation_type, "{}")
 
     async def annotate_batch(self, items: List[Dict[str, Any]], annotation_type: str,
                              config: Dict[str, Any], prompt_template: str = None) -> List[Dict[str, Any]]:
