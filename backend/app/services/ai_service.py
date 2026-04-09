@@ -245,17 +245,24 @@ Please respond ONLY in the following JSON format:
             examples = []
             for label in labels:
                 label_examples = label.get("examples", [])
-                for ex in label_examples[:2]:  # 最多2个
+                # 设计选择：每个 label 最多取2个示例，确保示例多样性
+                for ex in label_examples[:2]:
+                    # 兼容字符串和字典格式的 example
+                    if isinstance(ex, dict):
+                        ex_text = ex.get("text", "")
+                    else:
+                        ex_text = str(ex)
                     examples.append({
-                        "text": ex,
+                        "text": ex_text,
                         "label": label.get("name", "")
                     })
 
             if not examples:
                 return ""
 
+            # 设计选择：最多6个示例，避免 prompt 过长
             lines = ["Examples:"]
-            for i, ex in enumerate(examples[:6], 1):  # 最多6个示例
+            for i, ex in enumerate(examples[:6], 1):
                 lines.append(f'{i}. Text: "{ex["text"]}"')
                 lines.append(f'   Labels: ["{ex["label"]}"]')
                 lines.append("")
@@ -267,17 +274,26 @@ Please respond ONLY in the following JSON format:
             examples = []
             for el in entity_labels:
                 label_examples = el.get("examples", [])
-                for ex in label_examples[:2]:  # 最多2个
+                # 设计选择：每个 entity_label 最多取2个示例，确保示例多样性
+                for ex in label_examples[:2]:
+                    # 兼容字符串和字典格式的 example
+                    if isinstance(ex, dict):
+                        ex_text = ex.get("text", "")
+                        ex_entities = ex.get("entities", [])
+                    else:
+                        ex_text = str(ex)
+                        ex_entities = []
                     examples.append({
-                        "text": ex.get("text", ""),
-                        "entities": ex.get("entities", [])
+                        "text": ex_text,
+                        "entities": ex_entities
                     })
 
             if not examples:
                 return ""
 
+            # 设计选择：最多6个示例，避免 prompt 过长
             lines = ["Examples:"]
-            for i, ex in enumerate(examples[:6], 1):  # 最多6个示例
+            for i, ex in enumerate(examples[:6], 1):
                 lines.append(f'{i}. Text: "{ex["text"]}"')
                 entities_str = json.dumps(ex["entities"], ensure_ascii=False)
                 lines.append(f'   Entities: {entities_str}')
