@@ -302,7 +302,41 @@ Please respond ONLY in the following JSON format:
 
         return ""
 
-    def _parse_response(self, response: str, annotation_type: str) -> Dict[str, Any]:
+    def _validate_ner_entities(self, text: str, entities: List[Dict]) -> List[Dict]:
+        """校验并修正 NER 实体位置"""
+        validated = []
+        for entity in entities:
+            entity_text = entity.get("text", "")
+            start = entity.get("start", 0)
+            end = entity.get("end", 0)
+
+            # 基本范围检查
+            if not (0 <= start < end <= len(text)):
+                continue  # 范围无效，跳过
+
+            # 验证位置是否匹配文本
+            extracted = text[start:end]
+            if extracted == entity_text:
+                validated.append(entity)
+                continue
+
+            # 尝试在原文中重新查找
+            new_start = text.find(entity_text)
+            if new_start != -1:
+                entity["start"] = new_start
+                entity["end"] = new_start + len(entity_text)
+                validated.append(entity)
+                continue
+
+            # 找不到匹配，标记为无效
+            entity["_invalid"] = True
+            entity["_original_start"] = start
+            entity["_original_end"] = end
+            validated.append(entity)
+
+        return validated
+
+    def _parse_response(self, response: str, annotation_type: str, text: str = "") -> Dict[str, Any]:
         """解析 LLM 返回为标准标注格式"""
         # 尝试提取 JSON
         json_match = re.search(r'\{[\s\S]*\}', response)
@@ -320,10 +354,14 @@ Please respond ONLY in the following JSON format:
                         }
                     }
                 elif annotation_type == "ner":
+                    entities = parsed.get("entities", [])
+                    # 校验并修正实体位置
+                    if text:
+                        entities = self._validate_ner_entities(text, entities)
                     return {
                         "type": "ner",
                         "content": {
-                            "entities": parsed.get("entities", [])
+                            "entities": entities
                         }
                     }
                 elif annotation_type == "relation_extraction":
@@ -373,7 +411,7 @@ Please respond ONLY in the following JSON format:
         
         try:
             response = await self._call_llm(prompt)
-            result = self._parse_response(response, annotation_type)
+            result = self._parse_response(response, annotation_type, item_content.get("text", ""))
             result["is_ai_generated"] = True
             return result
         except Exception as e:
