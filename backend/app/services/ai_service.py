@@ -63,6 +63,8 @@ Please respond ONLY in the following JSON format:
 }""",
             "ner": """You are a Named Entity Recognition (NER) assistant. Please identify all entities in the following text and their types.
 
+{{examples}}
+
 Text: {{text}}
 
 Available entity types: {{entity_labels}}
@@ -201,35 +203,88 @@ Please respond ONLY in the following JSON format:
         else:
             return await self._call_openai(prompt)
 
-    def _build_prompt(self, content: Dict[str, Any], annotation_type: str, 
+    def _build_prompt(self, content: Dict[str, Any], annotation_type: str,
                       config: Dict[str, Any], template: str = None) -> str:
         """构建标注 Prompt"""
         ai_config = self._load_config()
-        
+
         # 使用自定义模板或默认模板
         if template is None:
             templates = ai_config.get("prompt_templates", {})
             template = templates.get(annotation_type, "")
-        
+
+        # 构建 few-shot examples
+        examples_text = self._build_examples_text(annotation_type, config)
+
         # 准备变量
         variables = {
             "text": content.get("text", ""),
             "labels": ", ".join([l.get("name", "") for l in config.get("labels", [])]),
             "entity_labels": ", ".join([l.get("name", "") for l in config.get("entity_labels", [])]),
             "relation_types": ", ".join(config.get("relation_types", [])),
-            "dimensions": "\n".join([f"- {d.get('name', '')}: {d.get('description', '')}" 
+            "dimensions": "\n".join([f"- {d.get('name', '')}: {d.get('description', '')}"
                                      for d in config.get("score_dimensions", [])]),
             "max_score": str(config.get("max_score", 10)),
-            "dialog": json.dumps(content.get("messages", []), ensure_ascii=False, indent=2)
+            "dialog": json.dumps(content.get("messages", []), ensure_ascii=False, indent=2),
+            "examples": examples_text
         }
-        
+
         # 替换模板变量
         prompt = template
         for key, value in variables.items():
             placeholder = f"{{{{{key}}}}}"
             prompt = prompt.replace(placeholder, value)
-        
+
         return prompt
+
+    def _build_examples_text(self, annotation_type: str, config: Dict[str, Any]) -> str:
+        """构建 few-shot 示例文本"""
+        if annotation_type == "text_classification":
+            # 文本分类：从 labels 中获取 examples
+            labels = config.get("labels", [])
+            examples = []
+            for label in labels:
+                label_examples = label.get("examples", [])
+                for ex in label_examples[:2]:  # 最多2个
+                    examples.append({
+                        "text": ex,
+                        "label": label.get("name", "")
+                    })
+
+            if not examples:
+                return ""
+
+            lines = ["Examples:"]
+            for i, ex in enumerate(examples[:6], 1):  # 最多6个示例
+                lines.append(f'{i}. Text: "{ex["text"]}"')
+                lines.append(f'   Labels: ["{ex["label"]}"]')
+                lines.append("")
+            return "\n".join(lines).strip()
+
+        elif annotation_type == "ner":
+            # NER：从 entity_labels 中获取 examples
+            entity_labels = config.get("entity_labels", [])
+            examples = []
+            for el in entity_labels:
+                label_examples = el.get("examples", [])
+                for ex in label_examples[:2]:  # 最多2个
+                    examples.append({
+                        "text": ex.get("text", ""),
+                        "entities": ex.get("entities", [])
+                    })
+
+            if not examples:
+                return ""
+
+            lines = ["Examples:"]
+            for i, ex in enumerate(examples[:6], 1):  # 最多6个示例
+                lines.append(f'{i}. Text: "{ex["text"]}"')
+                entities_str = json.dumps(ex["entities"], ensure_ascii=False)
+                lines.append(f'   Entities: {entities_str}')
+                lines.append("")
+            return "\n".join(lines).strip()
+
+        return ""
 
     def _parse_response(self, response: str, annotation_type: str) -> Dict[str, Any]:
         """解析 LLM 返回为标准标注格式"""
