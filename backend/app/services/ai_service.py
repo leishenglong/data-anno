@@ -317,22 +317,31 @@ Please respond ONLY in the following JSON format:
             # 验证位置是否匹配文本
             extracted = text[start:end]
             if extracted == entity_text:
-                validated.append(entity)
+                # 浅拷贝足够，因为我们只替换顶层键
+                entity_copy = entity.copy()
+                validated.append(entity_copy)
                 continue
 
-            # 尝试在原文中重新查找
-            new_start = text.find(entity_text)
+            # 尝试在原文中重新查找（大小写不敏感）
+            new_start = text.lower().find(entity_text.lower())
             if new_start != -1:
-                entity["start"] = new_start
-                entity["end"] = new_start + len(entity_text)
-                validated.append(entity)
-                continue
+                # 找到后检查实际文本是否匹配（考虑大小写）
+                actual_text = text[new_start:new_start + len(entity_text)]
+                if actual_text.lower() == entity_text.lower():
+                    entity_copy = entity.copy()
+                    entity_copy["start"] = new_start
+                    entity_copy["end"] = new_start + len(entity_text)
+                    validated.append(entity_copy)
+                    continue
 
+            # 注意：如果实体文本在原文中多次出现，这里总是选择第一次出现
+            # 这是当前设计的限制
             # 找不到匹配，标记为无效
-            entity["_invalid"] = True
-            entity["_original_start"] = start
-            entity["_original_end"] = end
-            validated.append(entity)
+            entity_copy = entity.copy()
+            entity_copy["_invalid"] = True
+            entity_copy["_original_start"] = start
+            entity_copy["_original_end"] = end
+            validated.append(entity_copy)
 
         return validated
 
