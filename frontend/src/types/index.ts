@@ -1,5 +1,13 @@
 // 标注类型枚举
-export type AnnotationType = 'text_classification' | 'ner' | 'relation_extraction' | 'dialog' | 'score_review';
+export type AnnotationType = 'text_classification' | 'ner' | 'relation_extraction' | 'dialog' | 'score_review' | 'incident_report';
+
+export interface IncidentReportAnnotation {
+  incident_type: string;
+  incident_level: string;
+  cause: string;
+  description: string;
+  attachments: Array<{ type: string; url: string }>;
+}
 
 export interface Project {
   id: number;
@@ -90,5 +98,10 @@ export const ANNOTATION_TYPE_CONFIG: Record<AnnotationType, {
     label: '评分评审',
     description: '对文本进行多维度评分',
     icon: 'StarOutlined',
+  },
+  incident_report: {
+    label: '事故报告',
+    description: '标注煤矿事故报告信息',
+    icon: 'FileTextOutlined',
   },
 };
