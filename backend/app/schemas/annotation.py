@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AnnotationBase(BaseModel):
@@ -48,3 +48,11 @@ class AnnotationListResponse(BaseModel):
     """标注列表响应"""
     items: List[AnnotationResponse]
     total: int
+
+
+class IncidentReportContent(BaseModel):
+    incident_type: str = Field(..., description="事故类型")
+    incident_level: str = Field(..., description="等级：一般/较大/重大/特别重大")
+    cause: str = Field(..., description="原因分类")
+    description: Optional[str] = Field("", description="自由文本描述")
+    attachments: List[Dict[str, str]] = Field(default_factory=list, description="附件URL列表")

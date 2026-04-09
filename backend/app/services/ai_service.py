@@ -512,6 +512,7 @@ Please respond ONLY in the following JSON format:
             "relation_extraction": "关系抽取",
             "dialog": "对话质量评估",
             "score_review": "评分评审",
+            "incident_report": "煤矿风险事件记录",
         }
         return descriptions.get(annotation_type, annotation_type)
 
@@ -523,6 +524,7 @@ Please respond ONLY in the following JSON format:
             "relation_extraction": '{"entities": [], "relations": []}',
             "dialog": '{"quality": "good", "issues": [], "suggestions": [], "score": 85}',
             "score_review": '{"scores": {}, "total_score": 0, "comments": ""}',
+            "incident_report": '{"incident_type": "类型", "incident_level": "等级", "cause": "原因", "description": "描述", "attachments": []}',
         }
         return schemas.get(annotation_type, "{}")
 
