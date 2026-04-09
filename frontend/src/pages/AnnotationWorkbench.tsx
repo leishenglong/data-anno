@@ -37,6 +37,7 @@ import {
   RelationAnnotator,
   DialogAnnotator,
   ScoreReviewer,
+  IncidentReportForm,
 } from '@/components/annotation';
 
 const AnnotationWorkbench: React.FC = () => {
@@ -495,6 +496,15 @@ const AnnotationWorkbench: React.FC = () => {
       case 'score_review':
         return (
           <ScoreReviewer
+            content={content}
+            config={config}
+            value={currentAnnotation}
+            onChange={setCurrentAnnotation}
+          />
+        );
+      case 'incident_report':
+        return (
+          <IncidentReportForm
             content={content}
             config={config}
             value={currentAnnotation}
