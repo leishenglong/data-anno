@@ -12,9 +12,9 @@ import {
   Col,
   ColorPicker,
 } from 'antd';
-import { 
-  TagsOutlined, 
-  HighlightOutlined, 
+import {
+  TagsOutlined,
+  HighlightOutlined,
   ApartmentOutlined,
   MessageOutlined,
   StarOutlined,
@@ -25,6 +25,7 @@ import {
   ProjectOutlined,
   SettingOutlined,
   FlagOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { projectApi } from '@/services/api';
@@ -63,6 +64,7 @@ const ProjectCreate: React.FC = () => {
     'relation_extraction',
     'dialog',
     'score_review',
+    'incident_report',
   ];
 
   const getAnnotationIcon = (type: AnnotationType) => {
@@ -77,6 +79,8 @@ const ProjectCreate: React.FC = () => {
         return <MessageOutlined />;
       case 'score_review':
         return <StarOutlined />;
+      case 'incident_report':
+        return <FileTextOutlined />;
     }
   };
 
@@ -92,6 +96,8 @@ const ProjectCreate: React.FC = () => {
         return { primary: '#fa8c16', bg: '#fff7e6' };
       case 'score_review':
         return { primary: '#faad14', bg: '#fffbe6' };
+      case 'incident_report':
+        return { primary: '#f5222d', bg: '#fff1f0' };
       default:
         return { primary: '#666', bg: '#f5f5f5' };
     }
