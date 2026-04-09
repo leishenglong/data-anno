@@ -2,9 +2,12 @@
 import json
 import asyncio
 import re
+import logging
 from typing import Dict, Any, List, Optional
 import httpx
 from openai import AsyncOpenAI
+
+logger = logging.getLogger(__name__)
 
 from app.config import settings
 
@@ -345,6 +348,37 @@ Please respond ONLY in the following JSON format:
 
         return validated
 
+    def _is_semantic_error(self, result: Dict[str, Any], annotation_type: str) -> bool:
+        """检查是否是语义错误（JSON 有效但内容不正确）"""
+        content = result.get("content", {})
+
+        if annotation_type == "text_classification":
+            labels = content.get("labels", [])
+            if not labels or labels == []:
+                return True
+
+        elif annotation_type == "ner":
+            entities = content.get("entities", [])
+            if not entities or entities == []:
+                return True
+
+        elif annotation_type == "relation_extraction":
+            # 检查是否有实体
+            entities = content.get("entities", [])
+            if not entities or entities == []:
+                return True
+
+        elif annotation_type == "dialog":
+            if not content.get("quality") or not content.get("score"):
+                return True
+
+        elif annotation_type == "score_review":
+            scores = content.get("scores", {})
+            if not scores or scores == {}:
+                return True
+
+        return False
+
     def _parse_response(self, response: str, annotation_type: str, text: str = "") -> Dict[str, Any]:
         """解析 LLM 返回为标准标注格式"""
         # 尝试提取 JSON
@@ -422,13 +456,20 @@ Please respond ONLY in the following JSON format:
             response = await self._call_llm(prompt)
             result = self._parse_response(response, annotation_type, item_content.get("text", ""))
 
-            # 检查是否是解析错误，如果是则重试一次
-            if result.get("parse_error"):
+            # 检查是否是解析错误或语义错误，如果是则重试一次
+            parse_error = result.get("parse_error")
+            semantic_error = self._is_semantic_error(result, annotation_type)
+            if parse_error or semantic_error:
+                if parse_error:
+                    logger.info(f"Parse error, retrying with strict prompt for item")
+                else:
+                    logger.info(f"Semantic error (empty or invalid content), retrying with strict prompt for item")
                 retry_result = await self._retry_with_strict_prompt(
                     item_content, annotation_type, config
                 )
                 if retry_result and not retry_result.get("parse_error"):
                     result = retry_result
+                    logger.info(f"Retry successful")
 
             result["is_ai_generated"] = True
             return result
