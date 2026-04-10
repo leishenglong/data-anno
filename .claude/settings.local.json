@@ -12,7 +12,30 @@
       "Bash(python -c \"from app.schemas.annotation import IncidentReportContent; print\\('Schema OK'\\)\")",
       "Bash(npm run:*)",
       "Skill(browse)",
-      "Skill(qa)"
+      "Skill(qa)",
+      "Bash(~/.claude/skills/gstack/browse/dist/browse goto:*)",
+      "Bash(netstat -ano)",
+      "Bash(~/.claude/skills/gstack/browse/dist/browse status:*)",
+      "Bash(chmod +x ~/.claude/skills/gstack/browse/dist/browse)",
+      "Read(//c/Users/shl.lei/.claude/skills/gstack/browse/dist/**)",
+      "Bash(~/.claude/skills/gstack/browse/dist/browse:*)",
+      "Bash(where browse:*)",
+      "Read(//c/Users/shl.lei/.claude/skills/gstack/browse/**)",
+      "Bash(cat ~/.claude/skills/gstack/browse/bin/*)",
+      "Bash(~/.claude/skills/gstack/browse/bin/find-browse:*)",
+      "Bash(./setup)",
+      "Bash(bun --version)",
+      "Bash(~/.claude/skills/gstack/browse/dist/browse.exe:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(node server.js)",
+      "Bash(node server-node.mjs)",
+      "Bash(~/.claude/skills/gstack/browse/dist/server-node.mjs)",
+      "Bash(curl -s http://127.0.0.1:24871/status)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-config get:*)",
+      "Bash(powershell.exe -Command \"& 'C:\\\\\\\\Users\\\\\\\\shl.lei\\\\\\\\.claude\\\\\\\\skills\\\\\\\\gstack\\\\\\\\browse\\\\\\\\dist\\\\\\\\browse.exe' status 2>&1\")",
+      "Bash(curl:*)",
+      "Bash(wsl.exe -e bash -c 'export B=~/.claude/skills/gstack/browse/dist/browse && echo $B && ls -la $B')",
+      "Bash(bun run:*)"
     ]
   }
 }
