@@ -65,6 +65,11 @@ const ProjectDetail: React.FC = () => {
   const fetchProject = async () => {
     try {
       const projectId = Number(id);
+      if (isNaN(projectId)) {
+        message.error('无效的项目ID');
+        navigate('/projects');
+        return;
+      }
       const [projectRes, datasetsRes, statsRes] = await Promise.all([
         projectApi.getProject(projectId),
         datasetApi.getDatasets(projectId),
