@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile backend/app/services/ai_service.py)",
+      "Bash(python -m py_compile \"D:\\\\code\\\\data-anno\\\\backend\\\\app\\\\services\\\\ai_service.py\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(python -c \"from app.services.ai_service import AIService; print\\('AI Service loaded OK'\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"from app.routers.ai import router; print\\('AI router OK'\\)\")",
+      "Bash(npx tsc:*)",
+      "Bash(python -c \"from app.schemas.annotation import IncidentReportContent; print\\('Schema OK'\\)\")",
+      "Bash(npm run:*)",
+      "Skill(browse)",
+      "Skill(qa)"
+    ]
+  }
+}

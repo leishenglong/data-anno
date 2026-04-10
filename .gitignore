@@ -49,3 +49,4 @@ data/*.db
 
 # Backend temp
 backend/.data/
+.gstack/
