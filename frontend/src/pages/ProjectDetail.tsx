@@ -35,7 +35,6 @@ import {
   FileTextOutlined,
   DashboardOutlined,
   AuditOutlined,
-  RobotOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -613,8 +612,8 @@ const ProjectDetail: React.FC = () => {
               </div>
             }
             extra={
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 icon={<UploadOutlined />}
                 onClick={() => setUploadVisible(true)}
                 style={{
@@ -627,7 +626,7 @@ const ProjectDetail: React.FC = () => {
                 上传数据集
               </Button>
             }
-            style={{ 
+            style={{
               borderRadius: 16,
               border: '1px solid rgba(0,0,0,0.06)',
               boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
@@ -649,14 +648,6 @@ const ProjectDetail: React.FC = () => {
                   <UploadOutlined style={{ fontSize: 32, color: '#999' }} />
                 </div>
                 <p style={{ color: '#999', marginBottom: 16 }}>暂无数据集，请上传数据开始标注</p>
-                <Button 
-                  type="primary" 
-                  icon={<UploadOutlined />}
-                  onClick={() => setUploadVisible(true)}
-                  style={{ borderRadius: 8 }}
-                >
-                  上传数据集
-                </Button>
               </div>
             ) : (
               <Table
