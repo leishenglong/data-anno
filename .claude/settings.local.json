@@ -35,7 +35,16 @@
       "Bash(powershell.exe -Command \"& 'C:\\\\\\\\Users\\\\\\\\shl.lei\\\\\\\\.claude\\\\\\\\skills\\\\\\\\gstack\\\\\\\\browse\\\\\\\\dist\\\\\\\\browse.exe' status 2>&1\")",
       "Bash(curl:*)",
       "Bash(wsl.exe -e bash -c 'export B=~/.claude/skills/gstack/browse/dist/browse && echo $B && ls -la $B')",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Skill(open-gstack-browser)",
+      "Bash(ls:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-config list:*)",
+      "Bash(whoami /groups)",
+      "Bash(node ~/.claude/skills/gstack/browse/dist/server-node.mjs status)",
+      "Bash(tasklist)",
+      "Bash(node server-node.mjs goto http://localhost:5173/projects/9)",
+      "Bash(taskkill //F //IM chrome-headless-shell.exe)"
     ]
   }
 }
