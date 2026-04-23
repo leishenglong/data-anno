@@ -36,6 +36,7 @@ export interface ProjectConfig {
   max_score?: number;          // 最高分
   relation_types?: string[];   // 关系类型
   entity_labels?: LabelConfig[]; // 实体标签（用于关系抽取）
+  labelSets?: LabelConfig[];  // 标签集（用于 sensor_timeseries）
 }
 
 export interface LabelConfig {

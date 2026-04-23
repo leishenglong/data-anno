@@ -172,22 +172,22 @@ const AppLayout: React.FC = () => {
         }}
       >
         {/* Logo 区域 */}
-        <div style={{ 
-          height: 72, 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          height: 52,
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: collapsed ? 0 : '0 24px',
+          padding: collapsed ? 0 : '0 16px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
-          gap: 12,
+          gap: 10,
           cursor: 'pointer',
         }}
           onClick={() => navigate('/')}
         >
           <div style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
+            width: 32,
+            height: 32,
+            borderRadius: 8,
             background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
             display: 'flex',
             alignItems: 'center',
@@ -195,17 +195,17 @@ const AppLayout: React.FC = () => {
             boxShadow: '0 4px 12px rgba(24, 144, 255, 0.4)',
             flexShrink: 0,
           }}>
-            <DatabaseOutlined style={{ fontSize: 20, color: '#fff' }} />
+            <DatabaseOutlined style={{ fontSize: 16, color: '#fff' }} />
           </div>
           {!collapsed && (
-            <div style={{ 
+            <div style={{
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
             }}>
-              <span style={{ 
-                color: '#fff', 
-                fontSize: 18, 
+              <span style={{
+                color: '#fff',
+                fontSize: 15,
                 fontWeight: 700,
                 whiteSpace: 'nowrap',
                 letterSpacing: '0.5px',
@@ -214,10 +214,10 @@ const AppLayout: React.FC = () => {
               </span>
               <span style={{
                 color: 'rgba(255,255,255,0.45)',
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 400,
               }}>
-                智能数据标注平台
+                智能数据标注
               </span>
             </div>
           )}
@@ -226,7 +226,7 @@ const AppLayout: React.FC = () => {
         {/* 菜单区域 */}
         <div style={{
           padding: '8px 12px',
-          height: 'calc(100vh - 72px - 60px)',
+          height: 'calc(100vh - 52px - 60px)',
           overflowY: 'auto',
         }}>
           <Menu
@@ -353,29 +353,30 @@ const AppLayout: React.FC = () => {
         background: 'linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%)',
       }}>
         {/* 顶部导航栏 */}
-        <Header style={{ 
-          padding: '0 24px', 
+        <Header style={{
+          padding: '0 16px',
           background: colorBgContainer,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          height: 72,
+          height: 52,
+          lineHeight: '52px',
           position: 'sticky',
           top: 0,
           zIndex: 100,
         }}>
           {/* 左侧：折叠按钮和面包屑 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <Button
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
               style={{
-                fontSize: 18,
-                width: 48,
-                height: 48,
-                borderRadius: 10,
+                fontSize: 16,
+                width: 36,
+                height: 36,
+                borderRadius: 8,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -383,34 +384,34 @@ const AppLayout: React.FC = () => {
               }}
               className="hover-scale"
             />
-            <Breadcrumb 
+            <Breadcrumb
               items={getBreadcrumbs()}
               separator={
-                <span style={{ color: '#d9d9d9', margin: '0 4px' }}>/</span>
+                <span style={{ color: '#d9d9d9', margin: '0 2px' }}>/</span>
               }
-              style={{ fontSize: 14 }}
+              style={{ fontSize: 13 }}
             />
           </div>
 
           {/* 右侧：快捷操作 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
-              padding: '6px 16px',
+              padding: '2px 8px',
               background: 'linear-gradient(135deg, #f6ffed 0%, #e6fffb 100%)',
-              borderRadius: 20,
+              borderRadius: 12,
               border: '1px solid #b7eb8f',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 5,
             }}>
               <div style={{
-                width: 8,
-                height: 8,
+                width: 5,
+                height: 5,
                 borderRadius: '50%',
                 background: '#52c41a',
-                boxShadow: '0 0 8px rgba(82, 196, 26, 0.5)',
+                boxShadow: '0 0 6px rgba(82, 196, 26, 0.5)',
               }} />
-              <span style={{ fontSize: 12, color: '#389e0d' }}>系统正常</span>
+              <span style={{ fontSize: 10, color: '#389e0d', lineHeight: 1 }}>系统正常</span>
             </div>
           </div>
         </Header>
@@ -418,8 +419,8 @@ const AppLayout: React.FC = () => {
         {/* 主内容区 */}
         <Content
           style={{
-            margin: 24,
-            padding: 28,
+            margin: 16,
+            padding: 20,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
             minHeight: 280,

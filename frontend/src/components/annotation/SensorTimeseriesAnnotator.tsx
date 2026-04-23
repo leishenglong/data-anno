@@ -5,6 +5,13 @@ import { DeleteOutlined } from '@ant-design/icons';
 import Papa from 'papaparse';
 import { SensorTimeseriesAnnotation } from '../../types';
 
+const DEFAULT_LABELS = [
+  { name: '正常', color: '#52c41a' },
+  { name: '异常', color: '#faad14' },
+  { name: '检修', color: '#1890ff' },
+  { name: '报警', color: '#ff4d4f' },
+];
+
 interface SensorTimeseriesAnnotatorProps {
   content: {
     format: 'csv' | 'json';
@@ -14,8 +21,8 @@ interface SensorTimeseriesAnnotatorProps {
       sensorColumns?: string[];
     };
   };
-  config: {
-    labelSets: Array<{ name: string; color: string }>;
+  config?: {
+    labelSets?: Array<{ name: string; color: string }>;
   };
   value: SensorTimeseriesAnnotation | null;
   onChange: (value: SensorTimeseriesAnnotation) => void;
@@ -36,7 +43,7 @@ interface SelectionRange {
 
 const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
   content,
-  config,
+  config = {},
   value,
   onChange,
 }) => {
@@ -45,9 +52,7 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
   const [selectedSensor, setSelectedSensor] = useState<string>('');
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
   const [selection, setSelection] = useState<SelectionRange | null>(null);
-  const [labelPickerVisible, setLabelPickerVisible] = useState(false);
   const [popoverVisible, setPopoverVisible] = useState(false);
-  const [selectedLabel, setSelectedLabel] = useState<string>('');
   const [annotations, setAnnotations] = useState<SensorTimeseriesAnnotation['annotations']>([]);
 
   // Initialize annotations from value
@@ -142,15 +147,16 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
     const chartData = timestamps.map((t, i) => [t, values[i]]);
 
     // Prepare markArea for annotations
-    const markAreaData: echarts.SeriesLineSeriesMarkAreaDataObject[] = annotations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const markAreaData: any[] = annotations
       .filter(ann => ann.sensor === selectedSensor)
       .map(ann => {
-        const labelConfig = config.labelSets.find(l => l.name === ann.label);
+        const labelConfig = (config.labelSets || DEFAULT_LABELS).find(l => l.name === ann.label);
         const color = labelConfig?.color || '#999';
         return [
           { xAxis: ann.startTime, itemStyle: { color, opacity: 0.3 } },
           { xAxis: ann.endTime }
-        ] as echarts.SeriesLineSeriesMarkAreaDataObject;
+        ];
       });
 
     const option: echarts.EChartsOption = {
@@ -240,7 +246,7 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
             startTime,
             endTime
           });
-          setLabelPickerVisible(true);
+          setPopoverVisible(true);
         }
       }
     });
@@ -265,7 +271,7 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
       }
     });
 
-  }, [parsedData, selectedSensor, annotations, config.labelSets]);
+  }, [parsedData, selectedSensor, annotations, config.labelSets || DEFAULT_LABELS]);
 
   const handleLabelSelect = (label: string) => {
     if (!selection) return;
@@ -281,8 +287,8 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
     const newAnnotations = [...annotations, newAnnotation];
     setAnnotations(newAnnotations);
     onChange({ annotations: newAnnotations });
-    setLabelPickerVisible(false);
     setSelection(null);
+    setPopoverVisible(false);
     setPopoverVisible(false);
     message.success('标注已添加');
   };
@@ -291,7 +297,7 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
     <div style={{ minWidth: 150 }}>
       <div style={{ marginBottom: 8, fontWeight: 500 }}>选择标签</div>
       <Space direction="vertical" style={{ width: '100%' }}>
-        {config.labelSets.map(label => (
+        {(config.labelSets || DEFAULT_LABELS).map(label => (
           <Button
             key={label.name}
             block
@@ -355,7 +361,7 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   padding: '4px 8px',
-                  backgroundColor: config.labelSets.find(l => l.name === ann.label)?.color || '#999',
+                  backgroundColor: (config.labelSets || DEFAULT_LABELS).find(l => l.name === ann.label)?.color || '#999',
                   color: '#fff',
                   borderRadius: 4,
                   marginRight: 8,
