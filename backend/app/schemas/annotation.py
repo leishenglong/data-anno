@@ -56,3 +56,8 @@ class IncidentReportContent(BaseModel):
     cause: str = Field(..., description="原因分类")
     description: Optional[str] = Field("", description="自由文本描述")
     attachments: List[Dict[str, str]] = Field(default_factory=list, description="附件URL列表")
+
+
+class SensorTimeseriesContent(BaseModel):
+    """传感器时序标注内容"""
+    annotations: List[Dict[str, Any]] = Field(default_factory=list, description="标注列表")
