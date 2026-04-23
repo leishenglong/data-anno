@@ -123,28 +123,22 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
     parseData();
   }, [content]);
 
-  // Initialize chart
+  // Initialize and update chart
   useEffect(() => {
-    if (!chartRef.current || !parsedData) return;
+    if (!chartRef.current || !parsedData || !selectedSensor) return;
 
-    const chart = echarts.init(chartRef.current);
-    chartInstanceRef.current = chart;
+    let chart = chartInstanceRef.current;
+    if (!chart) {
+      if (!chartRef.current) return;
+      chart = echarts.init(chartRef.current);
+      chartInstanceRef.current = chart;
+    }
 
-    return () => {
-      chart.dispose();
-    };
-  }, [parsedData]);
-
-  // Update chart when selections change
-  useEffect(() => {
-    if (!chartInstanceRef.current || !parsedData || !selectedSensor) return;
-
-    const chart = chartInstanceRef.current;
     const { timestamps, sensors } = parsedData;
     const values = sensors[selectedSensor] || [];
 
-    // Prepare chart data
-    const chartData = timestamps.map((t, i) => [t, values[i]]);
+    // Prepare chart data - convert time strings to Date objects for ECharts
+    const chartData = timestamps.map((t, i) => [new Date(t), values[i]]);
 
     // Prepare markArea for annotations
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,37 +162,39 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
           return `${p.value[0]}<br/>${selectedSensor}: ${p.value[1]}`;
         }
       },
-      legend: {
-        data: [selectedSensor],
-        top: 10
-      },
       toolbox: {
-        right: 20,
         feature: {
+          brush: {
+            type: ['rect', 'lineX', 'lineY', 'clear'],
+            title: {
+              rect: '矩形选择',
+              lineX: '横向选择',
+              lineY: '纵向选择',
+              clear: '清除选择'
+            }
+          },
           dataZoom: {
             yAxisIndex: 'none',
             title: {
-              zoom: '区域缩放',
+              zoom: '缩放',
               back: '还原'
             }
-          },
-          brush: {
-            type: ['rect', 'polygon', 'lineX', 'lineY', 'keep', 'clear'],
-            title: {
-              rect: '矩形选择',
-              polygon: '圈选',
-              lineX: '横向选择',
-              lineY: '纵向选择',
-              keep: '保持选择',
-              clear: '清除选择'
-            }
           }
-        }
+        },
+        right: 20,
+        top: 10
       },
       brush: {
-        toolbox: ['rect', 'polygon'],
+        toolbox: ['rect', 'lineX', 'lineY'],
         xAxisIndex: 0,
-        outOfBrush: { colorAlpha: 0.3 }
+        brushStyle: {
+          color: 'rgba(24, 144, 255, 0.2)',
+          borderColor: '#1890ff'
+        }
+      },
+      legend: {
+        data: [selectedSensor],
+        top: 10
       },
       xAxis: {
         type: 'time',
@@ -220,6 +216,8 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
         name: selectedSensor,
         type: 'line',
         data: chartData,
+        lineStyle: { width: 2 },
+        areaStyle: { opacity: 0.1 },
         markArea: {
           silent: false,
           emphasis: {
@@ -232,27 +230,32 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
 
     chart.setOption(option);
 
-    // Handle brush selection
-    chart.on('brush', (params: any) => {
-      if (params.areas && params.areas.length > 0) {
-        const area = params.areas[0];
-        if (area.coordRange) {
-          const [startIdx, endIdx] = area.coordRange;
-          const startTime = timestamps[Math.floor(startIdx)] || timestamps[0];
-          const endTime = timestamps[Math.floor(endIdx)] || timestamps[timestamps.length - 1];
-          setSelection({
-            startIndex: Math.floor(startIdx),
-            endIndex: Math.floor(endIdx),
-            startTime,
-            endTime
-          });
-          setPopoverVisible(true);
-        }
-      }
-    });
+    // Handle brush selection - only on brushEnd
+    const handleBrush = () => {
+      // Do nothing during brush, only on brushEnd
+    };
+
+    const handleBrushEnd = (params: any) => {
+      if (!params.areas || params.areas.length === 0) return;
+      const area = params.areas[0];
+      if (!area.coordRange) return;
+
+      const [startIdx, endIdx] = area.coordRange;
+      if (startIdx === endIdx) return; // Ignore zero-width selection
+
+      const startTime = timestamps[Math.floor(startIdx)] || timestamps[0];
+      const endTime = timestamps[Math.floor(endIdx)] || timestamps[timestamps.length - 1];
+      setSelection({
+        startIndex: Math.floor(startIdx),
+        endIndex: Math.floor(endIdx),
+        startTime,
+        endTime
+      });
+      setPopoverVisible(true);
+    };
 
     // Handle click on annotation to edit/delete
-    chart.on('click', (params: any) => {
+    const handleClick = (params: any) => {
       if (params.componentType === 'markArea') {
         const annIndex = annotations.findIndex(
           a => a.sensor === selectedSensor &&
@@ -260,7 +263,6 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
                a.endTime === params.data[1].xAxis
         );
         if (annIndex >= 0) {
-          // Show delete confirmation
           const ann = annotations[annIndex];
           if (window.confirm(`删除标注: ${ann.label} (${ann.startTime} - ${ann.endTime})?`)) {
             const newAnnotations = annotations.filter((_, i) => i !== annIndex);
@@ -269,9 +271,25 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
           }
         }
       }
-    });
+    };
 
-  }, [parsedData, selectedSensor, annotations, config.labelSets || DEFAULT_LABELS]);
+    chart.off('brush', handleBrush);
+    chart.off('brushEnd', handleBrushEnd);
+    chart.off('click', handleClick);
+    chart.on('brush', handleBrush);
+    chart.on('brushEnd', handleBrushEnd);
+    chart.on('click', handleClick);
+
+    // Handle resize
+    const handleResize = () => {
+      chart.resize();
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [parsedData, selectedSensor, annotations, config.labelSets]);
 
   const handleLabelSelect = (label: string) => {
     if (!selection) return;
@@ -288,7 +306,6 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
     setAnnotations(newAnnotations);
     onChange({ annotations: newAnnotations });
     setSelection(null);
-    setPopoverVisible(false);
     setPopoverVisible(false);
     message.success('标注已添加');
   };
@@ -317,7 +334,7 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
   );
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <div style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
         <Space>
           <span>传感器:</span>
@@ -334,18 +351,45 @@ const SensorTimeseriesAnnotator: React.FC<SensorTimeseriesAnnotatorProps> = ({
         </Space>
       </div>
 
-      <div ref={chartRef} style={{ flex: 1, minHeight: 400 }} />
+      <div ref={chartRef} style={{ width: '100%', height: 400, flexShrink: 0 }} />
 
       {selection && (
-        <Popover
-          content={labelPickerContent}
-          title={`区间: ${selection.startTime} ~ ${selection.endTime}`}
-          trigger="click"
-          open={popoverVisible}
-          onOpenChange={setPopoverVisible}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 180,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'white',
+            padding: '12px 16px',
+            borderRadius: 8,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            minWidth: 250
+          }}
         >
-          <div style={{ display: 'none' }} />
-        </Popover>
+          <div style={{ marginBottom: 8, fontWeight: 500, textAlign: 'center' }}>
+            区间: {selection.startTime} ~ {selection.endTime}
+          </div>
+          <Space>
+            {(config.labelSets || DEFAULT_LABELS).map(label => (
+              <Button
+                key={label.name}
+                style={{
+                  backgroundColor: label.color,
+                  borderColor: label.color,
+                  color: '#fff'
+                }}
+                onClick={() => handleLabelSelect(label.name)}
+              >
+                {label.name}
+              </Button>
+            ))}
+            <Button onClick={() => { setSelection(null); setPopoverVisible(false); }}>
+              取消
+            </Button>
+          </Space>
+        </div>
       )}
 
       <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', maxHeight: 150, overflowY: 'auto' }}>
