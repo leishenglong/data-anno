@@ -47,37 +47,69 @@ async def create_dataset(
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     # 读取文件内容
     content = await file.read()
     filename = file.filename or "unnamed"
-    
-    # 解析数据
+    text_content = content.decode('utf-8')
+
+    # 时序传感器类型：整个文件存为一条数据，便于波形图展示
+    if project.annotation_type == 'sensor_timeseries':
+        # 创建数据集
+        dataset = Dataset(
+            project_id=project_id,
+            name=name,
+            file_name=filename,
+            total_items=1,
+            annotated_items=0,
+            status="processing"
+        )
+        db.add(dataset)
+        await db.flush()
+
+        # 存储原始文件内容
+        file_ext = filename.split('.')[-1].lower() if '.' in filename else 'csv'
+        data_item = DataItem(
+            dataset_id=dataset.id,
+            content={
+                'format': file_ext,
+                'raw': text_content
+            },
+            meta_data={},
+            status="pending",
+            order_index=0
+        )
+        db.add(data_item)
+
+        dataset.status = "completed"
+        await db.commit()
+        await db.refresh(dataset)
+        return dataset
+
+    # 解析数据（其他类型）
     items_data = []
     try:
         if filename.endswith('.json'):
-            data = json.loads(content.decode('utf-8'))
+            data = json.loads(text_content)
             if isinstance(data, list):
                 items_data = data
             else:
                 items_data = [data]
         elif filename.endswith('.jsonl'):
-            text = content.decode('utf-8')
-            for line in text.strip().split('\n'):
+            for line in text_content.strip().split('\n'):
                 if line.strip():
                     items_data.append(json.loads(line))
         elif filename.endswith('.csv'):
-            text = content.decode('utf-8')
-            reader = csv.DictReader(io.StringIO(text))
+            reader = csv.DictReader(io.StringIO(text_content))
             items_data = list(reader)
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format. Use JSON, JSONL, or CSV")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
-    
+
     if not items_data:
         raise HTTPException(status_code=400, detail="No data found in file")
-    
+
     # 创建数据集
     dataset = Dataset(
         project_id=project_id,
@@ -89,7 +121,7 @@ async def create_dataset(
     )
     db.add(dataset)
     await db.flush()  # 获取 dataset.id
-    
+
     # 创建数据项
     for idx, item_data in enumerate(items_data):
         data_item = DataItem(
@@ -100,11 +132,11 @@ async def create_dataset(
             order_index=idx
         )
         db.add(data_item)
-    
+
     dataset.status = "completed"
     await db.commit()
     await db.refresh(dataset)
-    
+
     return dataset
 
 
