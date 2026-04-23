@@ -1,5 +1,5 @@
 // 标注类型枚举
-export type AnnotationType = 'text_classification' | 'ner' | 'relation_extraction' | 'dialog' | 'score_review' | 'incident_report';
+export type AnnotationType = 'text_classification' | 'ner' | 'relation_extraction' | 'dialog' | 'score_review' | 'incident_report' | 'sensor_timeseries';
 
 export interface IncidentReportAnnotation {
   incident_type: string;
@@ -7,6 +7,17 @@ export interface IncidentReportAnnotation {
   cause: string;
   description: string;
   attachments: Array<{ type: string; url: string }>;
+}
+
+export interface SensorTimeseriesAnnotation {
+  annotations: Array<{
+    id: string;
+    startTime: string;
+    endTime: string;
+    label: string;
+    sensor: string;
+    note?: string;
+  }>;
 }
 
 export interface Project {
@@ -103,5 +114,10 @@ export const ANNOTATION_TYPE_CONFIG: Record<AnnotationType, {
     label: '事故报告',
     description: '标注煤矿事故报告信息',
     icon: 'FileTextOutlined',
+  },
+  sensor_timeseries: {
+    label: '时序传感器',
+    description: '时序传感器数据标注',
+    icon: 'LineChartOutlined',
   },
 };
