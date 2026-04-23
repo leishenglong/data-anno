@@ -27,6 +27,7 @@ import {
   SettingOutlined,
   FlagOutlined,
   FileTextOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { projectApi } from '@/services/api';
@@ -66,6 +67,7 @@ const ProjectCreate: React.FC = () => {
     'dialog',
     'score_review',
     'incident_report',
+    'sensor_timeseries',
   ];
 
   const getAnnotationIcon = (type: AnnotationType) => {
@@ -82,6 +84,8 @@ const ProjectCreate: React.FC = () => {
         return <StarOutlined />;
       case 'incident_report':
         return <FileTextOutlined />;
+      case 'sensor_timeseries':
+        return <LineChartOutlined />;
     }
   };
 
@@ -99,6 +103,8 @@ const ProjectCreate: React.FC = () => {
         return { primary: '#faad14', bg: '#fffbe6' };
       case 'incident_report':
         return { primary: '#f5222d', bg: '#fff1f0' };
+      case 'sensor_timeseries':
+        return { primary: '#1890ff', bg: '#e6f4ff' };
       default:
         return { primary: '#666', bg: '#f5f5f5' };
     }
@@ -176,6 +182,13 @@ const ProjectCreate: React.FC = () => {
         }
       } else if (annotationType === 'incident_report') {
         // incident_report 不需要额外配置
+      } else if (annotationType === 'sensor_timeseries') {
+        config.labelSets = [
+          { name: '正常', color: '#52c41a' },
+          { name: '异常', color: '#faad14' },
+          { name: '检修', color: '#1890ff' },
+          { name: '报警', color: '#ff4d4f' },
+        ];
       }
 
       const description = projectDescription?.trim() || undefined;
