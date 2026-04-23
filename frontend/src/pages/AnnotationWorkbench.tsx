@@ -38,6 +38,7 @@ import {
   DialogAnnotator,
   ScoreReviewer,
   IncidentReportForm,
+  SensorTimeseriesAnnotator,
 } from '@/components/annotation';
 
 const AnnotationWorkbench: React.FC = () => {
@@ -505,6 +506,15 @@ const AnnotationWorkbench: React.FC = () => {
       case 'incident_report':
         return (
           <IncidentReportForm
+            content={content}
+            config={config}
+            value={currentAnnotation}
+            onChange={setCurrentAnnotation}
+          />
+        );
+      case 'sensor_timeseries':
+        return (
+          <SensorTimeseriesAnnotator
             content={content}
             config={config}
             value={currentAnnotation}
